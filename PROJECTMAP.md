@@ -42,7 +42,7 @@ questops-watchdog/
 ├── config/              JSON config files
 │   └── servers.json     (future) monitored server definitions
 ├── scripts/
-│   ├── questops_watchdog.ps1  (future) main runner
+│   ├── questops_watchdog.ps1  Main runner (reads config, runs checks, sends alerts)
 │   ├── test_discord.ps1       Discord webhook test script
 │   └── install_task.ps1       (future) scheduled task installer
 ├── lib/
@@ -68,7 +68,7 @@ questops-watchdog/
 
 ## Current Phase
 
-**Phase 1 — Core Checks (in progress)**
+**Phase 3 — Runner + Schedule (in progress)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -90,11 +90,10 @@ Completed:
   - Write-QOState — writes state JSON, creates parent folders
   - Test-QOAlertCooldown — checks cooldown per alert key
   - Set-QOAlertSent — records last-sent timestamp
+- scripts/questops_watchdog.ps1 — Main runner (reads config, runs checks, manages cooldowns, sends alerts, writes state/logs)
 
 Not started:
-- Main runner script (questops_watchdog.ps1)
-- Config reader (loading servers.json into check functions)
-- Scheduled task setup
+- Scheduled task setup (install_task.ps1)
 
 ## Assumptions
 
@@ -114,4 +113,4 @@ Not started:
 
 ## Next Recommended Step
 
-Create the main runner script `scripts/questops_watchdog.ps1` that reads `config/servers.json`, runs all checks via `lib/checks.ps1`, manages cooldowns via `lib/state.ps1`, sends alerts via `lib/discord.ps1`, and writes logs.
+Create `scripts/install_task.ps1` — a helper script that sets up the Windows scheduled task to run `questops_watchdog.ps1` every 5 minutes.

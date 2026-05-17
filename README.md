@@ -103,6 +103,30 @@ State management in `lib/state.ps1` prevents Discord spam by tracking when each 
 
 Each check type has its own cooldown timer, so a "process stopped" alert and a "disk low" alert fire independently.
 
+## Running
+
+Run the main watchdog from the project root:
+
+```powershell
+# Using the example config (disabled servers — no alerts sent)
+powershell -File scripts\questops_watchdog.ps1
+
+# Using your own config
+powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.json
+```
+
+The script:
+1. Reads the config and identifies enabled servers
+2. Runs each enabled check (process, log, backup, disk)
+3. Sends a Discord alert when a check fails (cooldown prevents spam)
+4. Writes per-server state files to `state/`
+5. Prints a coloured console summary
+
+Set the Discord webhook URL via environment variable (name defined in config):
+```powershell
+$env:QUEST_OPS_DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/your-id/your-token'
+```
+
 ## Setup
 
 See [docs/install.md](docs/install.md) for manual setup instructions.

@@ -1,0 +1,238 @@
+<#
+.SYNOPSIS
+    QuestOps Watchdog — local game server monitoring agent.
+    Reads a JSON config, runs health checks, and sends Discord alerts.
+
+.PARAMETER ConfigPath
+    Path to server configuration JSON (default: config/servers.example.json).
+#>
+
+param(
+    [string]$ConfigPath = "config\servers.example.json"
+)
+
+# ---------------------------------------------------------------------------
+# Resolve paths relative to the project root (parent of scripts/)
+# ---------------------------------------------------------------------------
+$scriptRoot   = Split-Path -Parent $MyInvocation.MyCommand.Path
+$projectRoot  = Split-Path -Parent $scriptRoot
+
+# ---------------------------------------------------------------------------
+# Dot-source libraries
+# ---------------------------------------------------------------------------
+. (Join-Path -Path $projectRoot -ChildPath "lib\discord.ps1")
+. (Join-Path -Path $projectRoot -ChildPath "lib\checks.ps1")
+. (Join-Path -Path $projectRoot -ChildPath "lib\state.ps1")
+
+# ---------------------------------------------------------------------------
+# Resolve config path
+# ---------------------------------------------------------------------------
+if (-not [System.IO.Path]::IsPathRooted($ConfigPath)) {
+    $ConfigPath = Join-Path -Path $projectRoot -ChildPath $ConfigPath
+}
+
+if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
+    Write-Host "ERROR: Config file not found: $ConfigPath" -ForegroundColor Red
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Read configuration
+# ---------------------------------------------------------------------------
+try {
+    $config = Get-Content -LiteralPath $ConfigPath -Raw -ErrorAction Stop | ConvertFrom-Json
+}
+catch {
+    Write-Host "ERROR: Could not read config file: $ConfigPath" -ForegroundColor Red
+    exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Global defaults
+# ---------------------------------------------------------------------------
+$stateRoot            = $config.global.stateDir
+$logDir               = $config.global.logDir
+$globalWebhookEnvVar  = $config.discord.webhookUrlEnvVar
+$globalDefaultCooldown = if ($config.discord.defaultCooldownMinutes) { $config.discord.defaultCooldownMinutes } else { 15 }
+
+# Resolve relative state/log directories against the project root
+if (-not [System.IO.Path]::IsPathRooted($stateRoot)) {
+    $stateRoot = Join-Path -Path $projectRoot -ChildPath $stateRoot
+}
+if (-not [System.IO.Path]::IsPathRooted($logDir)) {
+    $logDir = Join-Path -Path $projectRoot -ChildPath $logDir
+}
+
+# Ensure log directory exists
+if (-not (Test-Path -LiteralPath $logDir)) {
+    New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+}
+
+# ---------------------------------------------------------------------------
+# Run summary counters
+# ---------------------------------------------------------------------------
+$totalServers = 0
+$totalChecks  = 0
+$totalAlerts  = 0
+$runTimestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+
+Write-Host "QuestOps Watchdog v0.1" -ForegroundColor Cyan
+Write-Host "Run: $runTimestamp" -ForegroundColor Cyan
+Write-Host "Config: $ConfigPath" -ForegroundColor Cyan
+Write-Host ("=" * 60)
+
+# ---------------------------------------------------------------------------
+# Process each server
+# ---------------------------------------------------------------------------
+foreach ($server in $config.servers) {
+
+    # Skip disabled servers
+    if (-not $server.enabled) {
+        Write-Host ("[SKIP]  $($server.name)") -ForegroundColor DarkGray
+        continue
+    }
+
+    $totalServers++
+    Write-Host ("`n[SERVER] $($server.name)") -ForegroundColor Yellow
+
+    # Generate a filesystem-safe server key from the server name
+    $serverKey = ($server.name.ToLower() -replace '[^a-z0-9]+', '-').Trim('-')
+    if (-not $serverKey) { $serverKey = "server-$totalServers" }
+
+    # Load per-server state
+    $statePath = Get-QOStateFilePath -StateRoot $stateRoot -ServerKey $serverKey
+    $state     = Read-QOState -StatePath $statePath
+    $stateChanged = $false
+
+    # Resolve webhook URL from environment variable (never hardcoded)
+    $envVarName = if ($server.discord.webhookUrlEnvVar) { $server.discord.webhookUrlEnvVar } else { $globalWebhookEnvVar }
+    $webhookUrl = [Environment]::GetEnvironmentVariable($envVarName)
+
+    # Resolve cooldown (per-server or global default)
+    $cooldownMinutes = if ($server.discord.cooldownMinutes) { $server.discord.cooldownMinutes } else { $globalDefaultCooldown }
+
+    # -----------------------------------------------------------------------
+    # Process check
+    # -----------------------------------------------------------------------
+    if ($server.process.enabled) {
+        $totalChecks++
+        $procName = $server.process.name -replace '\.exe$', ''
+        $result   = Test-QOProcessRunning -ProcessName $procName
+
+        if (-not $result.Running) {
+            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "process_stopped" -CooldownMinutes $cooldownMinutes
+            if ($cooldown.CanSend -and $webhookUrl) {
+                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                    -Title "Process Stopped" `
+                    -Description "Server process '$($server.process.name)' is not running." `
+                    -Severity critical `
+                    -ServerName $server.name
+                if ($sent) {
+                    $state = Set-QOAlertSent -State $state -AlertKey "process_stopped"
+                    $stateChanged = $true
+                    $totalAlerts++
+                }
+            }
+            Write-Host ("  PROCESS : STOPPED") -ForegroundColor Red
+        }
+        else {
+            Write-Host ("  PROCESS : Running") -ForegroundColor Green
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    # Log freshness check
+    # -----------------------------------------------------------------------
+    if ($server.logFile.enabled) {
+        $totalChecks++
+        $result = Test-QOLogFreshness -Path $server.logFile.path -MaxAgeMinutes $server.logFile.maxAgeMinutes
+
+        if (-not $result.Fresh) {
+            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "log_stale" -CooldownMinutes $cooldownMinutes
+            if ($cooldown.CanSend -and $webhookUrl) {
+                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                    -Title "Log Stale" `
+                    -Description "Server log has not updated in $($result.AgeMinutes) minutes (limit $($server.logFile.maxAgeMinutes) min)." `
+                    -Severity warning `
+                    -ServerName $server.name
+                if ($sent) {
+                    $state = Set-QOAlertSent -State $state -AlertKey "log_stale"
+                    $stateChanged = $true
+                    $totalAlerts++
+                }
+            }
+            Write-Host ("  LOG     : STALE ($($result.AgeMinutes) min)") -ForegroundColor Red
+        }
+        else {
+            Write-Host ("  LOG     : Fresh") -ForegroundColor Green
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    # Backup freshness check
+    # -----------------------------------------------------------------------
+    if ($server.backup.enabled) {
+        $totalChecks++
+        $result = Test-QOBackupFreshness -Path $server.backup.path -MaxAgeHours $server.backup.maxAgeHours
+
+        if (-not $result.Fresh) {
+            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "backup_stale" -CooldownMinutes $cooldownMinutes
+            if ($cooldown.CanSend -and $webhookUrl) {
+                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                    -Title "Backup Stale" `
+                    -Description "Server backup has not updated in $($result.AgeHours) hours (limit $($server.backup.maxAgeHours) hr)." `
+                    -Severity warning `
+                    -ServerName $server.name
+                if ($sent) {
+                    $state = Set-QOAlertSent -State $state -AlertKey "backup_stale"
+                    $stateChanged = $true
+                    $totalAlerts++
+                }
+            }
+            Write-Host ("  BACKUP  : STALE ($($result.AgeHours) hr)") -ForegroundColor Red
+        }
+        else {
+            Write-Host ("  BACKUP  : Fresh") -ForegroundColor Green
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    # Disk space check
+    # -----------------------------------------------------------------------
+    if ($server.disk.enabled) {
+        $totalChecks++
+        $driveLetter = $server.disk.path -replace '[:\\/].*$', ''
+        $result = Test-QODiskSpace -DriveLetter $driveLetter -MinimumFreeGB $server.disk.minFreeGB
+
+        if (-not $result.Healthy) {
+            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "disk_low" -CooldownMinutes $cooldownMinutes
+            if ($cooldown.CanSend -and $webhookUrl) {
+                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                    -Title "Disk Space Low" `
+                    -Description "Drive $driveLetter has $($result.FreeGB) GB free (minimum $($server.disk.minFreeGB) GB)." `
+                    -Severity warning `
+                    -ServerName $server.name
+                if ($sent) {
+                    $state = Set-QOAlertSent -State $state -AlertKey "disk_low"
+                    $stateChanged = $true
+                    $totalAlerts++
+                }
+            }
+            Write-Host ("  DISK    : LOW ($($result.FreeGB) GB free)") -ForegroundColor Red
+        }
+        else {
+            Write-Host ("  DISK    : OK ($($result.FreeGB) GB free)") -ForegroundColor Green
+        }
+    }
+
+    # Persist state if changed
+    if ($stateChanged) {
+        Write-QOState -StatePath $statePath -State $state | Out-Null
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Final summary
+# ---------------------------------------------------------------------------
+Write-Host ("`n" + ("=" * 60))
+Write-Host "Summary: $totalServers server(s), $totalChecks check(s), $totalAlerts alert(s) sent." -ForegroundColor Cyan
