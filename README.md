@@ -130,7 +130,10 @@ The script:
 2. Runs each enabled check (process, log, backup, disk)
 3. Sends a Discord alert when a check fails (cooldown prevents spam)
 4. Writes per-server state files to `state/`
-5. Prints a coloured console summary
+5. Writes a daily log file to `logs/questops-watchdog-YYYY-MM-DD.log`
+6. Prints a coloured console summary
+
+Logs are written to the directory configured in `global.logDir` (default: `.\logs`). Each run appends to the current day's log file with timestamps, server names, check results, and alert activity. Webhook URLs are never logged.
 
 Set the Discord webhook URL via environment variable (name defined in config):
 ```powershell

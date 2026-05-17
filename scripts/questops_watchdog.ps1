@@ -68,6 +68,19 @@ if (-not (Test-Path -LiteralPath $logDir)) {
     New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 }
 
+# Daily log file path
+$runLogPath = Join-Path -Path $logDir -ChildPath ("questops-watchdog-" + (Get-Date -Format "yyyy-MM-dd") + ".log")
+
+# Small logging helper
+function Write-QORunLog {
+    param(
+        [string]$Path,
+        [string]$Message
+    )
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    Add-Content -Path $Path -Value "$timestamp $Message"
+}
+
 # ---------------------------------------------------------------------------
 # Run summary counters
 # ---------------------------------------------------------------------------
@@ -80,6 +93,9 @@ Write-Host "QuestOps Watchdog v0.1" -ForegroundColor Cyan
 Write-Host "Run: $runTimestamp" -ForegroundColor Cyan
 Write-Host "Config: $ConfigPath" -ForegroundColor Cyan
 Write-Host ("=" * 60)
+Write-QORunLog -Path $runLogPath -Message 'QuestOps Watchdog v0.1 - Run started'
+Write-QORunLog -Path $runLogPath -Message ('Config: ' + $ConfigPath)
+Write-QORunLog -Path $runLogPath -Message ('= ' * 25)
 
 # ---------------------------------------------------------------------------
 # Process each server
@@ -89,11 +105,13 @@ foreach ($server in $config.servers) {
     # Skip disabled servers
     if (-not $server.enabled) {
         Write-Host ("[SKIP]  $($server.name)") -ForegroundColor DarkGray
+        Write-QORunLog -Path $runLogPath -Message ('SKIP   ' + $server.name)
         continue
     }
 
     $totalServers++
     Write-Host ("`n[SERVER] $($server.name)") -ForegroundColor Yellow
+    Write-QORunLog -Path $runLogPath -Message ('SERVER ' + $server.name)
 
     # Generate a filesystem-safe server key from the server name
     $serverKey = ($server.name.ToLower() -replace '[^a-z0-9]+', '-').Trim('-')
@@ -131,12 +149,18 @@ foreach ($server in $config.servers) {
                     $state = Set-QOAlertSent -State $state -AlertKey "process_stopped"
                     $stateChanged = $true
                     $totalAlerts++
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: process_stopped for ' + $server.process.name)
                 }
             }
+            else {
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: process_stopped (' + $cooldown.Message + ')')
+            }
             Write-Host ("  PROCESS : STOPPED") -ForegroundColor Red
+            Write-QORunLog -Path $runLogPath -Message '  PROCESS : STOPPED'
         }
         else {
             Write-Host ("  PROCESS : Running") -ForegroundColor Green
+            Write-QORunLog -Path $runLogPath -Message '  PROCESS : Running'
         }
     }
 
@@ -159,12 +183,18 @@ foreach ($server in $config.servers) {
                     $state = Set-QOAlertSent -State $state -AlertKey "log_stale"
                     $stateChanged = $true
                     $totalAlerts++
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: log_stale (age ' + $result.AgeMinutes + ' min)')
                 }
             }
+            else {
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: log_stale (' + $cooldown.Message + ')')
+            }
             Write-Host ("  LOG     : STALE ($($result.AgeMinutes) min)") -ForegroundColor Red
+            Write-QORunLog -Path $runLogPath -Message ('  LOG     : STALE (age ' + $result.AgeMinutes + ' min)')
         }
         else {
             Write-Host ("  LOG     : Fresh") -ForegroundColor Green
+            Write-QORunLog -Path $runLogPath -Message '  LOG     : Fresh'
         }
     }
 
@@ -187,12 +217,18 @@ foreach ($server in $config.servers) {
                     $state = Set-QOAlertSent -State $state -AlertKey "backup_stale"
                     $stateChanged = $true
                     $totalAlerts++
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: backup_stale (age ' + $result.AgeHours + ' hr)')
                 }
             }
+            else {
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: backup_stale (' + $cooldown.Message + ')')
+            }
             Write-Host ("  BACKUP  : STALE ($($result.AgeHours) hr)") -ForegroundColor Red
+            Write-QORunLog -Path $runLogPath -Message ('  BACKUP  : STALE (age ' + $result.AgeHours + ' hr)')
         }
         else {
             Write-Host ("  BACKUP  : Fresh") -ForegroundColor Green
+            Write-QORunLog -Path $runLogPath -Message '  BACKUP  : Fresh'
         }
     }
 
@@ -216,12 +252,18 @@ foreach ($server in $config.servers) {
                     $state = Set-QOAlertSent -State $state -AlertKey "disk_low"
                     $stateChanged = $true
                     $totalAlerts++
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: disk_low (free ' + $result.FreeGB + ' GB)')
                 }
             }
+            else {
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: disk_low (' + $cooldown.Message + ')')
+            }
             Write-Host ("  DISK    : LOW ($($result.FreeGB) GB free)") -ForegroundColor Red
+            Write-QORunLog -Path $runLogPath -Message ('  DISK    : LOW (free ' + $result.FreeGB + ' GB)')
         }
         else {
             Write-Host ("  DISK    : OK ($($result.FreeGB) GB free)") -ForegroundColor Green
+            Write-QORunLog -Path $runLogPath -Message ('  DISK    : OK (free ' + $result.FreeGB + ' GB)')
         }
     }
 
@@ -236,3 +278,6 @@ foreach ($server in $config.servers) {
 # ---------------------------------------------------------------------------
 Write-Host ("`n" + ("=" * 60))
 Write-Host "Summary: $totalServers server(s), $totalChecks check(s), $totalAlerts alert(s) sent." -ForegroundColor Cyan
+Write-QORunLog -Path $runLogPath -Message ('= ' * 25)
+Write-QORunLog -Path $runLogPath -Message ('Summary: ' + $totalServers + ' server(s), ' + $totalChecks + ' check(s), ' + $totalAlerts + ' alert(s) sent.')
+Write-QORunLog -Path $runLogPath -Message 'QuestOps Watchdog v0.1 - Run finished'

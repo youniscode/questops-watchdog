@@ -93,7 +93,7 @@ Completed:
   - Write-QOState — writes state JSON, creates parent folders
   - Test-QOAlertCooldown — checks cooldown per alert key
   - Set-QOAlertSent — records last-sent timestamp
-- scripts/questops_watchdog.ps1 — Main runner (reads config, runs checks, manages cooldowns, sends alerts, writes state/logs)
+- scripts/questops_watchdog.ps1 — Main runner (reads config, runs checks, manages cooldowns, sends alerts, writes state/logs, daily log file with timestamps and all check results)
 - scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
 - scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
 
@@ -115,4 +115,4 @@ Completed:
 
 ## Next Recommended Step
 
-Phase 4 — Testing + Polish. Run the full watchdog locally using the test config, verify all checks and Discord alerts work end-to-end, and write initial test coverage or smoke-test notes.
+Phase 4 — Testing + Polish. Run the full watchdog locally using the test config, verify all checks, Discord alerts, cooldowns, state persistence, and log files work end-to-end, then write initial test coverage or smoke-test notes.
