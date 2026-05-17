@@ -61,6 +61,19 @@ Copy `config/servers.example.json` to `config/servers.json` and edit:
 - All paths are examples; replace with your real server paths.
 - Per-server Discord webhook can override the global one via a different env var name.
 
+## Discord Notifications
+
+QuestOps Watchdog sends Discord embed alerts via webhook.
+
+### Test Your Webhook
+
+```powershell
+$env:QUESTOPS_DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/your-webhook-id/your-token'
+powershell -File scripts\test_discord.ps1
+```
+
+The helper library `lib/discord.ps1` provides the `Send-QODiscordWebhook` function with severity levels: `info` (blue), `warning` (orange), `critical` (red), `success` (green).
+
 ## Setup
 
 See [docs/install.md](docs/install.md) for manual setup instructions.

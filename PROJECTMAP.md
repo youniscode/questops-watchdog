@@ -43,11 +43,11 @@ questops-watchdog/
 │   └── servers.json     (future) monitored server definitions
 ├── scripts/
 │   ├── questops_watchdog.ps1  (future) main runner
-│   ├── test_discord.ps1       (future) webhook test
+│   ├── test_discord.ps1       Discord webhook test script
 │   └── install_task.ps1       (future) scheduled task installer
 ├── lib/
 │   ├── checks.ps1       (future) process, log, disk, backup checks
-│   ├── discord.ps1      (future) Discord webhook sender
+│   ├── discord.ps1      Discord webhook sender (Send-QODiscordWebhook)
 │   ├── state.ps1        (future) cooldown and state management
 │   └── diagnosis.ps1    (future) human-readable issue summaries
 ├── state/               Runtime state files (cooldowns, last status)
@@ -68,7 +68,11 @@ questops-watchdog/
 
 ## Current Phase
 
-**Phase 0 — Local MVP Foundation**
+**Phase 2 — Discord Integration**
+
+## Current Phase
+
+**Phase 2 — Discord Integration**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -77,10 +81,12 @@ Completed:
 - AI_WORKSPACE_RULES.md
 - docs/install.md
 - config/servers.example.json (example config with Valheim + Project Zomboid)
+- lib/discord.ps1 — Send-QODiscordWebhook function (Discord embed alerts, severity colours, error-safe, true/false return)
+- scripts/test_discord.ps1 — Webhook test script (reads QUESTOPS_DISCORD_WEBHOOK env var, dot-sources lib, sends test embed)
 
 Not started:
-- PowerShell check scripts
-- Discord webhook integration
+- Core checks (process, log freshness, disk space, backup freshness)
+- State management (cooldowns, runtime state files)
 - Main runner script
 - Scheduled task setup
 
@@ -102,4 +108,4 @@ Not started:
 
 ## Next Recommended Step
 
-Implement the first core check (process check) in `lib/checks.ps1`, reading from `config/servers.json`.
+Implement the first core check (process check) in `lib/checks.ps1`, reading from `config/servers.json`, then add the remaining checks (log freshness, disk space, backup freshness).
