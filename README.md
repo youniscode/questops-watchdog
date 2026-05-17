@@ -53,7 +53,8 @@ questops-watchdog/
 ├── scripts/         PowerShell scripts (runner, setup, test)
 ├── lib/             PowerShell module scripts
 │   ├── checks.ps1   Monitoring checks (process, log, backup, disk)
-│   └── discord.ps1  Discord webhook sender
+│   ├── discord.ps1  Discord webhook sender
+│   └── state.ps1    State & cooldown management
 ├── state/           Runtime state files (cooldowns, last status)
 ├── logs/            Local product logs
 └── docs/            Documentation
@@ -90,6 +91,17 @@ powershell -File scripts\test_discord.ps1
 ```
 
 The helper library `lib/discord.ps1` provides the `Send-QODiscordWebhook` function with severity levels: `info` (blue), `warning` (orange), `critical` (red), `success` (green).
+
+## Alert Cooldowns
+
+State management in `lib/state.ps1` prevents Discord spam by tracking when each alert was last sent:
+
+1. `Read-QOState` loads per-server state from `state/<ServerKey>/state.json`
+2. `Test-QOAlertCooldown` checks if enough minutes have passed since the last alert for a given `AlertKey` (e.g. `"process_stopped"`, `"log_stale"`, `"disk_low"`)
+3. `Set-QOAlertSent` updates the timestamp after sending
+4. `Write-QOState` persists the state back to disk
+
+Each check type has its own cooldown timer, so a "process stopped" alert and a "disk low" alert fire independently.
 
 ## Setup
 

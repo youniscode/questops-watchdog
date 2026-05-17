@@ -48,7 +48,7 @@ questops-watchdog/
 ├── lib/
 │   ├── checks.ps1       Monitoring checks (Test-QOProcessRunning, Test-QOLogFreshness, Test-QOBackupFreshness, Test-QODiskSpace)
 │   ├── discord.ps1      Discord webhook sender (Send-QODiscordWebhook)
-│   ├── state.ps1        (future) cooldown and state management
+│   ├── state.ps1        State & cooldown management (Read/Write/Test/Set, path builder)
 │   └── diagnosis.ps1    (future) human-readable issue summaries
 ├── state/               Runtime state files (cooldowns, last status)
 ├── logs/                Local product logs
@@ -84,9 +84,14 @@ Completed:
   - Test-QOLogFreshness — checks newest log file age
   - Test-QOBackupFreshness — checks newest backup item age
   - Test-QODiskSpace — checks drive free space
+- lib/state.ps1 — State & cooldown management:
+  - Get-QOStateFilePath — builds per-server state file path
+  - Read-QOState — reads state JSON (empty hashtable if missing/corrupt)
+  - Write-QOState — writes state JSON, creates parent folders
+  - Test-QOAlertCooldown — checks cooldown per alert key
+  - Set-QOAlertSent — records last-sent timestamp
 
 Not started:
-- State management (cooldowns, runtime state files)
 - Main runner script (questops_watchdog.ps1)
 - Config reader (loading servers.json into check functions)
 - Scheduled task setup
@@ -109,4 +114,4 @@ Not started:
 
 ## Next Recommended Step
 
-Create the main runner script `scripts/questops_watchdog.ps1` that reads `config/servers.json`, runs all checks via `lib/checks.ps1`, sends alerts via `lib/discord.ps1`, and writes logs and state files.
+Create the main runner script `scripts/questops_watchdog.ps1` that reads `config/servers.json`, runs all checks via `lib/checks.ps1`, manages cooldowns via `lib/state.ps1`, sends alerts via `lib/discord.ps1`, and writes logs.
