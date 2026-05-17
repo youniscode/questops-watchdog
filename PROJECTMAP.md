@@ -40,7 +40,8 @@ QuestOps Watchdog is a standalone Windows PowerShell monitoring agent for self-h
 ```
 questops-watchdog/
 ├── config/              JSON config files
-│   └── servers.json     (future) monitored server definitions
+│   ├── servers.example.json      Example config (all servers disabled)
+│   └── servers.local.test.json   Safe local test config (enabled, uses repo paths)
 ├── scripts/
 │   ├── questops_watchdog.ps1  Main runner (reads config, runs checks, sends alerts)
 │   ├── test_discord.ps1       Discord webhook test script
@@ -77,6 +78,7 @@ Completed:
 - AI_WORKSPACE_RULES.md
 - docs/install.md
 - config/servers.example.json (example config with Valheim + Project Zomboid)
+- config/servers.local.test.json (safe local test config — uses repo paths, enabled, 1-min cooldown)
 - lib/discord.ps1 — Send-QODiscordWebhook function (Discord embed alerts, severity colours, error-safe, true/false return)
 - scripts/test_discord.ps1 — Webhook test script (reads QUESTOPS_DISCORD_WEBHOOK env var, dot-sources lib, sends test embed)
 - lib/checks.ps1 — All four monitoring check functions:

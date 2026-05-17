@@ -113,7 +113,17 @@ powershell -File scripts\questops_watchdog.ps1
 
 # Using your own config
 powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.json
+
+# Local test (enabled server, safe paths, short cooldown)
+powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.local.test.json
 ```
+
+The local test config (`config/servers.local.test.json`) is pre-configured for safe testing:
+- Checks the PowerShell process (always running when the script runs)
+- Monitors the repo's own `.\logs` directory for log freshness and backups
+- Checks C: drive with a 1 GB minimum threshold
+- Uses `QUESTOPS_DISCORD_WEBHOOK` env var name (same as the Discord test script)
+- 1-minute cooldown for faster testing
 
 The script:
 1. Reads the config and identifies enabled servers

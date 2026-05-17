@@ -1,0 +1,53 @@
+{
+  "productName": "QuestOps Watchdog",
+  "configVersion": 1,
+
+  "global": {
+    "checkIntervalMinutes": 1,
+    "logDateFormat": "yyyy-MM-dd HH:mm:ss",
+    "stateDir": ".\\state",
+    "logDir": ".\\logs"
+  },
+
+  "discord": {
+    "webhookUrlEnvVar": "QUESTOPS_DISCORD_WEBHOOK",
+    "enabled": false,
+    "defaultCooldownMinutes": 1
+  },
+
+  "servers": [
+    {
+      "name": "Local Test Server",
+      "enabled": true,
+      "notes": "Safe local test config. Checks PowerShell process and the repo's own logs directory. No production paths.",
+
+      "process": {
+        "name": "powershell",
+        "enabled": true
+      },
+
+      "logFile": {
+        "path": ".\\logs",
+        "maxAgeMinutes": 1440,
+        "enabled": true
+      },
+
+      "disk": {
+        "path": "C:\\",
+        "minFreeGB": 1,
+        "enabled": true
+      },
+
+      "backup": {
+        "path": ".\\logs",
+        "maxAgeHours": 48,
+        "enabled": true
+      },
+
+      "discord": {
+        "webhookUrlEnvVar": "QUESTOPS_DISCORD_WEBHOOK",
+        "cooldownMinutes": 1
+      }
+    }
+  ]
+}
