@@ -46,7 +46,7 @@ questops-watchdog/
 │   ├── test_discord.ps1       Discord webhook test script
 │   └── install_task.ps1       (future) scheduled task installer
 ├── lib/
-│   ├── checks.ps1       (future) process, log, disk, backup checks
+│   ├── checks.ps1       Monitoring checks (Test-QOProcessRunning, Test-QOLogFreshness, Test-QOBackupFreshness, Test-QODiskSpace)
 │   ├── discord.ps1      Discord webhook sender (Send-QODiscordWebhook)
 │   ├── state.ps1        (future) cooldown and state management
 │   └── diagnosis.ps1    (future) human-readable issue summaries
@@ -68,11 +68,7 @@ questops-watchdog/
 
 ## Current Phase
 
-**Phase 2 — Discord Integration**
-
-## Current Phase
-
-**Phase 2 — Discord Integration**
+**Phase 1 — Core Checks (in progress)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -83,11 +79,16 @@ Completed:
 - config/servers.example.json (example config with Valheim + Project Zomboid)
 - lib/discord.ps1 — Send-QODiscordWebhook function (Discord embed alerts, severity colours, error-safe, true/false return)
 - scripts/test_discord.ps1 — Webhook test script (reads QUESTOPS_DISCORD_WEBHOOK env var, dot-sources lib, sends test embed)
+- lib/checks.ps1 — All four monitoring check functions:
+  - Test-QOProcessRunning — checks process by name
+  - Test-QOLogFreshness — checks newest log file age
+  - Test-QOBackupFreshness — checks newest backup item age
+  - Test-QODiskSpace — checks drive free space
 
 Not started:
-- Core checks (process, log freshness, disk space, backup freshness)
 - State management (cooldowns, runtime state files)
-- Main runner script
+- Main runner script (questops_watchdog.ps1)
+- Config reader (loading servers.json into check functions)
 - Scheduled task setup
 
 ## Assumptions
@@ -108,4 +109,4 @@ Not started:
 
 ## Next Recommended Step
 
-Implement the first core check (process check) in `lib/checks.ps1`, reading from `config/servers.json`, then add the remaining checks (log freshness, disk space, backup freshness).
+Create the main runner script `scripts/questops_watchdog.ps1` that reads `config/servers.json`, runs all checks via `lib/checks.ps1`, sends alerts via `lib/discord.ps1`, and writes logs and state files.

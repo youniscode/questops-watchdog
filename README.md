@@ -8,10 +8,25 @@ QuestOps Watchdog checks your game servers and sends clean Discord alerts when s
 
 ## Supported Checks (v0.1)
 
-- **Process Check** — Is the server process running?
-- **Log Freshness** — Is the log file updating recently?
-- **Backup Freshness** — Is the backup directory up to date?
-- **Disk Space** — Is free disk space above the threshold?
+All checks are available in `lib/checks.ps1`:
+
+| Function | What It Checks | Returns |
+|----------|---------------|---------|
+| `Test-QOProcessRunning` | Is the server process running? | Running, Message |
+| `Test-QOLogFreshness` | Is the log file updating recently? | Fresh, AgeMinutes, Message |
+| `Test-QOBackupFreshness` | Is the backup directory up to date? | Fresh, AgeHours, Message |
+| `Test-QODiskSpace` | Is free disk space above the threshold? | Healthy, FreeGB, Message |
+
+Each function returns `Success = $true/$false` and never modifies the system.
+
+### Quick Test
+
+```powershell
+. .\lib\checks.ps1
+Test-QOProcessRunning -ProcessName "explorer"
+Test-QODiskSpace -DriveLetter "C" -MinimumFreeGB 5
+Test-QOLogFreshness -Path "C:\Windows\Logs" -MaxAgeMinutes 1440
+```
 
 ## Requirements
 
@@ -36,7 +51,9 @@ QuestOps Watchdog checks your game servers and sends clean Discord alerts when s
 questops-watchdog/
 ├── config/          JSON configuration files
 ├── scripts/         PowerShell scripts (runner, setup, test)
-├── lib/             PowerShell module scripts (checks, discord, state)
+├── lib/             PowerShell module scripts
+│   ├── checks.ps1   Monitoring checks (process, log, backup, disk)
+│   └── discord.ps1  Discord webhook sender
 ├── state/           Runtime state files (cooldowns, last status)
 ├── logs/            Local product logs
 └── docs/            Documentation
