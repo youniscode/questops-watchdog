@@ -76,9 +76,9 @@ Completed:
 - PROJECTMAP.md
 - AI_WORKSPACE_RULES.md
 - docs/install.md
+- config/servers.example.json (example config with Valheim + Project Zomboid)
 
 Not started:
-- Config schema and servers.json
 - PowerShell check scripts
 - Discord webhook integration
 - Main runner script
@@ -102,4 +102,4 @@ Not started:
 
 ## Next Recommended Step
 
-Create `config/servers.json` schema and sample file, then implement the first core check (process check) in `lib/checks.ps1`.
+Implement the first core check (process check) in `lib/checks.ps1`, reading from `config/servers.json`.

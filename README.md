@@ -42,6 +42,25 @@ questops-watchdog/
 └── docs/            Documentation
 ```
 
+## Configuration
+
+Copy `config/servers.example.json` to `config/servers.json` and edit:
+
+```json
+{
+  "productName": "QuestOps Watchdog",
+  "configVersion": 1,
+  "global": { ... },
+  "discord": { "webhookUrlEnvVar": "QUEST_OPS_DISCORD_WEBHOOK" },
+  "servers": [ { "name": "...", "process": {...}, "logFile": {...}, ... } ]
+}
+```
+
+- Set the `QUEST_OPS_DISCORD_WEBHOOK` environment variable to your Discord webhook URL (never write it in the JSON file).
+- Each server has `enabled: false` by default — change to `true` to activate.
+- All paths are examples; replace with your real server paths.
+- Per-server Discord webhook can override the global one via a different env var name.
+
 ## Setup
 
 See [docs/install.md](docs/install.md) for manual setup instructions.
