@@ -45,7 +45,8 @@ questops-watchdog/
 ├── scripts/
 │   ├── questops_watchdog.ps1  Main runner (reads config, runs checks, sends alerts)
 │   ├── test_discord.ps1       Discord webhook test script
-│   └── install_task.ps1       (future) scheduled task installer
+│   ├── install_task.ps1       Scheduled task installer
+│   └── uninstall_task.ps1     Scheduled task uninstaller
 ├── lib/
 │   ├── checks.ps1       Monitoring checks (Test-QOProcessRunning, Test-QOLogFreshness, Test-QOBackupFreshness, Test-QODiskSpace)
 │   ├── discord.ps1      Discord webhook sender (Send-QODiscordWebhook)
@@ -69,7 +70,7 @@ questops-watchdog/
 
 ## Current Phase
 
-**Phase 3 — Runner + Schedule (in progress)**
+**Phase 3 — Runner + Schedule (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -93,9 +94,8 @@ Completed:
   - Test-QOAlertCooldown — checks cooldown per alert key
   - Set-QOAlertSent — records last-sent timestamp
 - scripts/questops_watchdog.ps1 — Main runner (reads config, runs checks, manages cooldowns, sends alerts, writes state/logs)
-
-Not started:
-- Scheduled task setup (install_task.ps1)
+- scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
+- scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
 
 ## Assumptions
 
@@ -115,4 +115,4 @@ Not started:
 
 ## Next Recommended Step
 
-Create `scripts/install_task.ps1` — a helper script that sets up the Windows scheduled task to run `questops_watchdog.ps1` every 5 minutes.
+Phase 4 — Testing + Polish. Run the full watchdog locally using the test config, verify all checks and Discord alerts work end-to-end, and write initial test coverage or smoke-test notes.

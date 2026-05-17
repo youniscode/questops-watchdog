@@ -137,6 +137,36 @@ Set the Discord webhook URL via environment variable (name defined in config):
 $env:QUEST_OPS_DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/your-id/your-token'
 ```
 
+## Scheduled Task (Automated Runs)
+
+Install a repeating scheduled task (runs every 5 minutes by default):
+
+```powershell
+# Use the local test config first (safe, no production paths)
+powershell -File scripts\install_task.ps1 -ConfigPath config\servers.local.test.json
+
+# Use your production config when ready
+powershell -File scripts\install_task.ps1 -ConfigPath config\servers.json
+
+# Custom interval (every 10 minutes)
+powershell -File scripts\install_task.ps1 -ConfigPath config\servers.json -IntervalMinutes 10
+```
+
+Uninstall the scheduled task:
+
+```powershell
+powershell -File scripts\uninstall_task.ps1
+
+# Custom task name (if changed during install)
+powershell -File scripts\uninstall_task.ps1 -TaskName "Custom Task Name"
+```
+
+**Important notes:**
+- The task runs only when you are logged on (interactive) — no passwords stored
+- The task is registered but does NOT start automatically; start it from Task Scheduler or run `Start-ScheduledTask -TaskName "QuestOps Watchdog"`
+- Some systems require running PowerShell as Administrator to register scheduled tasks
+- Always test with `config/servers.local.test.json` first before switching to production configs
+
 ## Setup
 
 See [docs/install.md](docs/install.md) for manual setup instructions.
