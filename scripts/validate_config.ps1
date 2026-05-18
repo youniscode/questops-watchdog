@@ -25,7 +25,7 @@ function Write-Result {
 }
 
 Write-Host ('= ' * 30)
-Write-Host ' QuestOps Watchdog — Config Validator'
+Write-Host ' QuestOps Watchdog - Config Validator'
 Write-Host ('= ' * 30)
 Write-Result -Label 'INFO' -Message ('Validating: ' + $ConfigPath)
 

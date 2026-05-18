@@ -139,6 +139,9 @@ powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.local.
 
 # Validate production template (all servers disabled — safe to run)
 powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.production.template.json
+
+# Validate config before running checks (exits early if config is invalid)
+powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.local.test.json -ValidateConfig
 ```
 
 The local test config (`config/servers.local.test.json`) is pre-configured for safe testing:

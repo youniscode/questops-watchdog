@@ -8,7 +8,8 @@
 #>
 
 param(
-    [string]$ConfigPath = "config\servers.example.json"
+    [string]$ConfigPath = "config\servers.example.json",
+    [switch]$ValidateConfig
 )
 
 # ---------------------------------------------------------------------------
@@ -34,6 +35,24 @@ if (-not [System.IO.Path]::IsPathRooted($ConfigPath)) {
 if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
     Write-Host "ERROR: Config file not found: $ConfigPath" -ForegroundColor Red
     exit 1
+}
+
+# ---------------------------------------------------------------------------
+# Optional config validation
+# ---------------------------------------------------------------------------
+if ($ValidateConfig) {
+    $validatorPath = Join-Path -Path $scriptRoot -ChildPath "validate_config.ps1"
+    if (-not (Test-Path -LiteralPath $validatorPath -PathType Leaf)) {
+        Write-Host "ERROR: Validator script not found: $validatorPath" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "Validating config before run..." -ForegroundColor Cyan
+    & $validatorPath -ConfigPath $ConfigPath
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Config validation failed. Aborting." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "Config validation passed. Proceeding with checks.`n" -ForegroundColor Green
 }
 
 # ---------------------------------------------------------------------------

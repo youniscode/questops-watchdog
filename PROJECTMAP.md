@@ -69,10 +69,11 @@ questops-watchdog/
 | 2 — Discord Integration | Webhook sender, alert formatting, cooldown logic |
 | 3 — Runner + Schedule | Main loop, scheduled task integration, logging |
 | 4 — Testing + Polish | Test coverage, edge cases, documentation finalization |
+| 5 — Polish & Hardening | Config validation on run, encoding fixes, edge case hardening |
 
 ## Current Phase
 
-**Phase 4 — Testing + Polish (complete)**
+**Phase 5 — Polish & Hardening (one task remaining)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -97,9 +98,11 @@ Completed:
   - Test-QOAlertCooldown — checks cooldown per alert key
   - Set-QOAlertSent — records last-sent timestamp
 - scripts/questops_watchdog.ps1 — Main runner (reads config, runs checks, manages cooldowns, sends alerts, writes state/logs, daily log file with timestamps and all check results)
+  - Task 13: Added -ValidateConfig switch — calls validate_config.ps1 before running checks; stops safely if config is invalid
 - scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
 - scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
 - scripts/validate_config.ps1 — Config file validator (checks structure, fields, webhook env var safety; exits 0/1)
+  - Encoding fix: replaced em dash with ASCII hyphen in title output
 
 Testing verified:
 - All 4 checks run and report correctly with test config (process=running, log/backup=fresh, disk=OK)
@@ -111,6 +114,7 @@ Testing verified:
 - All 3 config files pass validation (servers.local.test.json, servers.example.json, servers.production.template.json)
 - Inline `if` expressions inside PowerShell string concatenation fixed in validate_config.ps1 (line 119)
 - Alert suppression messages fixed in questops_watchdog.ps1 (all 4 checks) — now distinguishes cooldown vs. missing webhook URL
+- -ValidateConfig switch calls validate_config.ps1 and aborts on failure
 
 ## Assumptions
 
@@ -130,4 +134,4 @@ Testing verified:
 
 ## Next Recommended Step
 
-Phase 4 — Testing + Polish. Run the full watchdog locally using the test config, verify all checks, Discord alerts, cooldowns, state persistence, and log files work end-to-end, then write initial test coverage or smoke-test notes.
+Add success recovery alerts — when a previously-failing check passes again, send a "recovered" notification so admins know the issue resolved itself. Currently v0.1 only sends failure alerts; recovery is silent. Requires new embed handling in lib/discord.ps1 (success severity exists) and cooldown-aware recovery logic in the main runner.
