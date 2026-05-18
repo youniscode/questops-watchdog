@@ -160,6 +160,23 @@ Remove-Item -LiteralPath ".\\state\\maintenance\\local-test.flag"
 
 When maintenance is active, the console shows `MAINTENANCE : active (alerts suppressed)` per server, and the summary includes the suppressed count. Alerts suppressed by maintenance are logged separately from cooldown-suppressed alerts.
 
+## Recovery Alerts
+
+When a previously-failing check passes again, QuestOps Watchdog sends one recovery alert (severity: success, green). This prevents repeated notifications while still notifying you when the issue is resolved.
+
+Recovery behavior:
+- Only sent once per transition (failing → healthy), never repeated
+- Not sent during maintenance mode (alongside failure alert suppression)
+- Not sent if there was no previous failure recorded
+- Recovery titles: "Process Recovered", "Log Freshness Recovered", "Backup Freshness Recovered", "Disk Space Recovered"
+- The summary includes the count of recovery alerts sent
+
+The `active_failures` list is tracked in per-server state files under `state/<ServerKey>/state.json`. A recovery is eligible when:
+1. The check was previously failing (recorded in `active_failures`)
+2. The check now passes
+3. Discord webhook is configured
+4. Maintenance mode is not active
+
 ## Running
 
 Run the main watchdog from the project root:

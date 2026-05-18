@@ -196,3 +196,102 @@ function Set-QOAlertSent {
     $State[$AlertKey] = [DateTime]::UtcNow.ToString("o")
     return $State
 }
+
+
+function Set-QOAlertActive {
+    <#
+    .SYNOPSIS
+        Marks an alert key as actively failing in state. Used by recovery alert logic.
+
+    .PARAMETER State
+        Hashtable containing active_failures array.
+
+    .PARAMETER AlertKey
+        Unique key for the alert type (e.g. "process_stopped").
+
+    .OUTPUTS
+        [hashtable] The updated state hashtable.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$State,
+
+        [Parameter(Mandatory = $true)]
+        [string]$AlertKey
+    )
+
+    $failures = @()
+    if ($State.ContainsKey("active_failures") -and $State["active_failures"]) {
+        $failures = $State["active_failures"]
+    }
+    if ($failures -notcontains $AlertKey) {
+        $failures += $AlertKey
+    }
+    $State["active_failures"] = $failures
+    return $State
+}
+
+
+function Clear-QOAlertActive {
+    <#
+    .SYNOPSIS
+        Removes an alert key from the active failures list (recovery sent or condition resolved).
+
+    .PARAMETER State
+        Hashtable containing active_failures array.
+
+    .PARAMETER AlertKey
+        Unique key for the alert type (e.g. "process_stopped").
+
+    .OUTPUTS
+        [hashtable] The updated state hashtable.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$State,
+
+        [Parameter(Mandatory = $true)]
+        [string]$AlertKey
+    )
+
+    if ($State.ContainsKey("active_failures") -and $State["active_failures"]) {
+        $failures = @($State["active_failures"]) | Where-Object { $_ -ne $AlertKey }
+        if ($failures) {
+            $State["active_failures"] = @($failures)
+        }
+        else {
+            $State.Remove("active_failures")
+        }
+    }
+    return $State
+}
+
+
+function Test-QOAlertActive {
+    <#
+    .SYNOPSIS
+        Checks whether an alert key is currently marked as actively failing.
+
+    .PARAMETER State
+        Hashtable containing active_failures array.
+
+    .PARAMETER AlertKey
+        Unique key for the alert type (e.g. "process_stopped").
+
+    .OUTPUTS
+        [bool] $true if the alert key is in the active failures list.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [hashtable]$State,
+
+        [Parameter(Mandatory = $true)]
+        [string]$AlertKey
+    )
+
+    if (-not $State.ContainsKey("active_failures") -or -not $State["active_failures"]) {
+        return $false
+    }
+    $failures = @($State["active_failures"])
+    return ($failures -contains $AlertKey)
+}

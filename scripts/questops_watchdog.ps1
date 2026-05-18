@@ -103,10 +103,11 @@ function Write-QORunLog {
 # ---------------------------------------------------------------------------
 # Run summary counters
 # ---------------------------------------------------------------------------
-$totalServers    = 0
-$totalChecks     = 0
-$totalAlerts     = 0
-$totalSuppressed = 0
+$totalServers     = 0
+$totalChecks      = 0
+$totalAlerts      = 0
+$totalSuppressed  = 0
+$totalRecoveries  = 0
 $runTimestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 Write-Host "QuestOps Watchdog v0.1" -ForegroundColor Cyan
@@ -175,6 +176,8 @@ foreach ($server in $config.servers) {
         $result   = Test-QOProcessRunning -ProcessName $procName
 
         if (-not $result.Running) {
+            $state = Set-QOAlertActive -State $state -AlertKey "process_stopped"
+            $stateChanged = $true
             if ($maintenanceSuppress) {
                 $totalSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: process_stopped (maintenance mode)'
@@ -203,6 +206,25 @@ foreach ($server in $config.servers) {
             Write-QORunLog -Path $runLogPath -Message '  PROCESS : STOPPED'
         }
         else {
+            if (Test-QOAlertActive -State $state -AlertKey "process_stopped") {
+                if ($webhookUrl -and -not $maintenanceSuppress) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Process Recovered" `
+                        -Description "Server process '$($server.process.name)' is running again." `
+                        -Severity success `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $totalRecoveries++
+                        Write-QORunLog -Path $runLogPath -Message ('  RECOVERY sent: process_stopped for ' + $server.process.name)
+                    }
+                }
+                else {
+                    $recoverySuppress = if ($maintenanceSuppress) { 'maintenance mode' } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  RECOVERY suppressed: process_stopped (' + $recoverySuppress + ')')
+                }
+                $state = Clear-QOAlertActive -State $state -AlertKey "process_stopped"
+                $stateChanged = $true
+            }
             Write-Host ("  PROCESS : Running") -ForegroundColor Green
             Write-QORunLog -Path $runLogPath -Message '  PROCESS : Running'
         }
@@ -216,6 +238,8 @@ foreach ($server in $config.servers) {
         $result = Test-QOLogFreshness -Path $server.logFile.path -MaxAgeMinutes $server.logFile.maxAgeMinutes
 
         if (-not $result.Fresh) {
+            $state = Set-QOAlertActive -State $state -AlertKey "log_stale"
+            $stateChanged = $true
             if ($maintenanceSuppress) {
                 $totalSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: log_stale (maintenance mode)'
@@ -244,6 +268,25 @@ foreach ($server in $config.servers) {
             Write-QORunLog -Path $runLogPath -Message ('  LOG     : STALE (age ' + $result.AgeMinutes + ' min)')
         }
         else {
+            if (Test-QOAlertActive -State $state -AlertKey "log_stale") {
+                if ($webhookUrl -and -not $maintenanceSuppress) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Log Freshness Recovered" `
+                        -Description "Server log is updating again (last write $($result.AgeMinutes) min ago)." `
+                        -Severity success `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $totalRecoveries++
+                        Write-QORunLog -Path $runLogPath -Message '  RECOVERY sent: log_stale'
+                    }
+                }
+                else {
+                    $recoverySuppress = if ($maintenanceSuppress) { 'maintenance mode' } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  RECOVERY suppressed: log_stale (' + $recoverySuppress + ')')
+                }
+                $state = Clear-QOAlertActive -State $state -AlertKey "log_stale"
+                $stateChanged = $true
+            }
             Write-Host ("  LOG     : Fresh") -ForegroundColor Green
             Write-QORunLog -Path $runLogPath -Message '  LOG     : Fresh'
         }
@@ -257,6 +300,8 @@ foreach ($server in $config.servers) {
         $result = Test-QOBackupFreshness -Path $server.backup.path -MaxAgeHours $server.backup.maxAgeHours
 
         if (-not $result.Fresh) {
+            $state = Set-QOAlertActive -State $state -AlertKey "backup_stale"
+            $stateChanged = $true
             if ($maintenanceSuppress) {
                 $totalSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: backup_stale (maintenance mode)'
@@ -285,6 +330,25 @@ foreach ($server in $config.servers) {
             Write-QORunLog -Path $runLogPath -Message ('  BACKUP  : STALE (age ' + $result.AgeHours + ' hr)')
         }
         else {
+            if (Test-QOAlertActive -State $state -AlertKey "backup_stale") {
+                if ($webhookUrl -and -not $maintenanceSuppress) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Backup Freshness Recovered" `
+                        -Description "Server backup is updating again (last write $($result.AgeHours) hr ago)." `
+                        -Severity success `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $totalRecoveries++
+                        Write-QORunLog -Path $runLogPath -Message '  RECOVERY sent: backup_stale'
+                    }
+                }
+                else {
+                    $recoverySuppress = if ($maintenanceSuppress) { 'maintenance mode' } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  RECOVERY suppressed: backup_stale (' + $recoverySuppress + ')')
+                }
+                $state = Clear-QOAlertActive -State $state -AlertKey "backup_stale"
+                $stateChanged = $true
+            }
             Write-Host ("  BACKUP  : Fresh") -ForegroundColor Green
             Write-QORunLog -Path $runLogPath -Message '  BACKUP  : Fresh'
         }
@@ -299,6 +363,8 @@ foreach ($server in $config.servers) {
         $result = Test-QODiskSpace -DriveLetter $driveLetter -MinimumFreeGB $server.disk.minFreeGB
 
         if (-not $result.Healthy) {
+            $state = Set-QOAlertActive -State $state -AlertKey "disk_low"
+            $stateChanged = $true
             if ($maintenanceSuppress) {
                 $totalSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: disk_low (maintenance mode)'
@@ -327,6 +393,25 @@ foreach ($server in $config.servers) {
             Write-QORunLog -Path $runLogPath -Message ('  DISK    : LOW (free ' + $result.FreeGB + ' GB)')
         }
         else {
+            if (Test-QOAlertActive -State $state -AlertKey "disk_low") {
+                if ($webhookUrl -and -not $maintenanceSuppress) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Disk Space Recovered" `
+                        -Description "Drive $driveLetter has $($result.FreeGB) GB free (above $($server.disk.minFreeGB) GB threshold)." `
+                        -Severity success `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $totalRecoveries++
+                        Write-QORunLog -Path $runLogPath -Message '  RECOVERY sent: disk_low'
+                    }
+                }
+                else {
+                    $recoverySuppress = if ($maintenanceSuppress) { 'maintenance mode' } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  RECOVERY suppressed: disk_low (' + $recoverySuppress + ')')
+                }
+                $state = Clear-QOAlertActive -State $state -AlertKey "disk_low"
+                $stateChanged = $true
+            }
             Write-Host ("  DISK    : OK ($($result.FreeGB) GB free)") -ForegroundColor Green
             Write-QORunLog -Path $runLogPath -Message ('  DISK    : OK (free ' + $result.FreeGB + ' GB)')
         }
@@ -342,7 +427,7 @@ foreach ($server in $config.servers) {
 # Final summary
 # ---------------------------------------------------------------------------
 Write-Host ("`n" + ("=" * 60))
-Write-Host "Summary: $totalServers server(s), $totalChecks check(s), $totalAlerts alert(s) sent, $totalSuppressed suppressed." -ForegroundColor Cyan
+Write-Host "Summary: $totalServers server(s), $totalChecks check(s), $totalAlerts alert(s) sent, $totalSuppressed suppressed, $totalRecoveries recovery alert(s)." -ForegroundColor Cyan
 Write-QORunLog -Path $runLogPath -Message ('= ' * 25)
-Write-QORunLog -Path $runLogPath -Message ('Summary: ' + $totalServers + ' server(s), ' + $totalChecks + ' check(s), ' + $totalAlerts + ' alert(s) sent, ' + $totalSuppressed + ' suppressed.')
+Write-QORunLog -Path $runLogPath -Message ('Summary: ' + $totalServers + ' server(s), ' + $totalChecks + ' check(s), ' + $totalAlerts + ' alert(s) sent, ' + $totalSuppressed + ' suppressed, ' + $totalRecoveries + ' recovery alert(s).')
 Write-QORunLog -Path $runLogPath -Message 'QuestOps Watchdog v0.1 - Run finished'
