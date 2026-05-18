@@ -108,6 +108,7 @@ $totalChecks      = 0
 $totalAlerts      = 0
 $totalSuppressed  = 0
 $totalRecoveries  = 0
+$serverResults    = @()
 $runTimestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 Write-Host "QuestOps Watchdog v0.1" -ForegroundColor Cyan
@@ -125,6 +126,10 @@ foreach ($server in $config.servers) {
 
     # Skip disabled servers
     if (-not $server.enabled) {
+        $serverResults += @{
+            Name = $server.name; Status = "skipped"; Issues = 0
+            Alerts = 0; Suppressed = 0; Recoveries = 0
+        }
         Write-Host ("[SKIP]  $($server.name)") -ForegroundColor DarkGray
         Write-QORunLog -Path $runLogPath -Message ('SKIP   ' + $server.name)
         continue
@@ -149,6 +154,9 @@ foreach ($server in $config.servers) {
 
     # Resolve cooldown (per-server or global default)
     $cooldownMinutes = if ($server.discord.cooldownMinutes) { $server.discord.cooldownMinutes } else { $globalDefaultCooldown }
+
+    # Per-server result tracking for summary embed
+    $srvIssues = 0; $srvAlerts = 0; $srvSuppressed = 0; $srvRecoveries = 0
 
     # -----------------------------------------------------------------------
     # Maintenance mode detection
@@ -178,8 +186,9 @@ foreach ($server in $config.servers) {
         if (-not $result.Running) {
             $state = Set-QOAlertActive -State $state -AlertKey "process_stopped"
             $stateChanged = $true
+            $srvIssues++
             if ($maintenanceSuppress) {
-                $totalSuppressed++
+                $totalSuppressed++; $srvSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: process_stopped (maintenance mode)'
             }
             else {
@@ -193,7 +202,7 @@ foreach ($server in $config.servers) {
                     if ($sent) {
                         $state = Set-QOAlertSent -State $state -AlertKey "process_stopped"
                         $stateChanged = $true
-                        $totalAlerts++
+                        $totalAlerts++; $srvAlerts++
                         Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: process_stopped for ' + $server.process.name)
                     }
                 }
@@ -214,7 +223,7 @@ foreach ($server in $config.servers) {
                         -Severity success `
                         -ServerName $server.name
                     if ($sent) {
-                        $totalRecoveries++
+                        $totalRecoveries++; $srvRecoveries++
                         Write-QORunLog -Path $runLogPath -Message ('  RECOVERY sent: process_stopped for ' + $server.process.name)
                     }
                 }
@@ -240,8 +249,9 @@ foreach ($server in $config.servers) {
         if (-not $result.Fresh) {
             $state = Set-QOAlertActive -State $state -AlertKey "log_stale"
             $stateChanged = $true
+            $srvIssues++
             if ($maintenanceSuppress) {
-                $totalSuppressed++
+                $totalSuppressed++; $srvSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: log_stale (maintenance mode)'
             }
             else {
@@ -255,7 +265,7 @@ foreach ($server in $config.servers) {
                     if ($sent) {
                         $state = Set-QOAlertSent -State $state -AlertKey "log_stale"
                         $stateChanged = $true
-                        $totalAlerts++
+                        $totalAlerts++; $srvAlerts++
                         Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: log_stale (age ' + $result.AgeMinutes + ' min)')
                     }
                 }
@@ -276,7 +286,7 @@ foreach ($server in $config.servers) {
                         -Severity success `
                         -ServerName $server.name
                     if ($sent) {
-                        $totalRecoveries++
+                        $totalRecoveries++; $srvRecoveries++
                         Write-QORunLog -Path $runLogPath -Message '  RECOVERY sent: log_stale'
                     }
                 }
@@ -302,8 +312,9 @@ foreach ($server in $config.servers) {
         if (-not $result.Fresh) {
             $state = Set-QOAlertActive -State $state -AlertKey "backup_stale"
             $stateChanged = $true
+            $srvIssues++
             if ($maintenanceSuppress) {
-                $totalSuppressed++
+                $totalSuppressed++; $srvSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: backup_stale (maintenance mode)'
             }
             else {
@@ -317,7 +328,7 @@ foreach ($server in $config.servers) {
                     if ($sent) {
                         $state = Set-QOAlertSent -State $state -AlertKey "backup_stale"
                         $stateChanged = $true
-                        $totalAlerts++
+                        $totalAlerts++; $srvAlerts++
                         Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: backup_stale (age ' + $result.AgeHours + ' hr)')
                     }
                 }
@@ -338,7 +349,7 @@ foreach ($server in $config.servers) {
                         -Severity success `
                         -ServerName $server.name
                     if ($sent) {
-                        $totalRecoveries++
+                        $totalRecoveries++; $srvRecoveries++
                         Write-QORunLog -Path $runLogPath -Message '  RECOVERY sent: backup_stale'
                     }
                 }
@@ -365,8 +376,9 @@ foreach ($server in $config.servers) {
         if (-not $result.Healthy) {
             $state = Set-QOAlertActive -State $state -AlertKey "disk_low"
             $stateChanged = $true
+            $srvIssues++
             if ($maintenanceSuppress) {
-                $totalSuppressed++
+                $totalSuppressed++; $srvSuppressed++
                 Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: disk_low (maintenance mode)'
             }
             else {
@@ -380,7 +392,7 @@ foreach ($server in $config.servers) {
                     if ($sent) {
                         $state = Set-QOAlertSent -State $state -AlertKey "disk_low"
                         $stateChanged = $true
-                        $totalAlerts++
+                        $totalAlerts++; $srvAlerts++
                         Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: disk_low (free ' + $result.FreeGB + ' GB)')
                     }
                 }
@@ -401,7 +413,7 @@ foreach ($server in $config.servers) {
                         -Severity success `
                         -ServerName $server.name
                     if ($sent) {
-                        $totalRecoveries++
+                        $totalRecoveries++; $srvRecoveries++
                         Write-QORunLog -Path $runLogPath -Message '  RECOVERY sent: disk_low'
                     }
                 }
@@ -421,6 +433,13 @@ foreach ($server in $config.servers) {
     if ($stateChanged) {
         Write-QOState -StatePath $statePath -State $state | Out-Null
     }
+
+    # Record per-server result for summary embed
+    $srvStatus = if ($maintenanceSuppress) { 'maintenance' } elseif ($srvIssues -gt 0) { 'issue' } else { 'healthy' }
+    $serverResults += @{
+        Name = $server.name; Status = $srvStatus; Issues = $srvIssues
+        Alerts = $srvAlerts; Suppressed = $srvSuppressed; Recoveries = $srvRecoveries
+    }
 }
 
 # ---------------------------------------------------------------------------
@@ -428,6 +447,86 @@ foreach ($server in $config.servers) {
 # ---------------------------------------------------------------------------
 Write-Host ("`n" + ("=" * 60))
 Write-Host "Summary: $totalServers server(s), $totalChecks check(s), $totalAlerts alert(s) sent, $totalSuppressed suppressed, $totalRecoveries recovery alert(s)." -ForegroundColor Cyan
+
+# ---------------------------------------------------------------------------
+# Optional Discord summary embed
+# ---------------------------------------------------------------------------
+if ($config.summary -and $config.summary.enabled) {
+    $summaryCooldownMinutes = if ($config.summary.cooldownMinutes) { $config.summary.cooldownMinutes } else { 30 }
+    $sendOnlyOnIssues = if ($config.summary.sendOnlyOnIssues) { $true } else { $false }
+    $includeHealthy = if ($config.summary.includeHealthyServers) { $true } else { $false }
+
+    $totalIssueServers = ($serverResults | Where-Object { $_.Status -eq 'issue' } | Measure-Object).Count
+    $hasIssues = $totalIssueServers -gt 0
+    $hasRecoveries = $totalRecoveries -gt 0
+    $hasSuppressed = $totalSuppressed -gt 0
+
+    $shouldSend = (-not $sendOnlyOnIssues) -or $hasIssues -or $hasRecoveries -or $hasSuppressed
+
+    if ($shouldSend) {
+        $summaryWebhookUrl = [Environment]::GetEnvironmentVariable($globalWebhookEnvVar)
+
+        if ($summaryWebhookUrl) {
+            $summaryStateDir = Join-Path -Path $stateRoot -ChildPath "__summary__"
+            $summaryStatePath = Join-Path -Path $summaryStateDir -ChildPath "state.json"
+            $summaryState = Read-QOState -StatePath $summaryStatePath
+
+            $summaryCooldown = Test-QOAlertCooldown -State $summaryState -AlertKey "summary_sent" -CooldownMinutes $summaryCooldownMinutes
+
+            if ($summaryCooldown.CanSend) {
+                # Build title
+                if ($hasIssues) {
+                    $summaryTitle = "QuestOps Watchdog Summary - Issues Detected"
+                    $embedColor = 15548997
+                }
+                elseif ($hasRecoveries -or $hasSuppressed) {
+                    $summaryTitle = "QuestOps Watchdog Summary - Recovery Detected"
+                    $embedColor = 16763904
+                }
+                else {
+                    $summaryTitle = "QuestOps Watchdog Summary"
+                    $embedColor = 5814783
+                }
+
+                $summaryDesc = "Total Servers: $totalServers`nTotal Checks: $totalChecks`nAlerts Sent: $totalAlerts`nAlerts Suppressed: $totalSuppressed`nRecovery Alerts: $totalRecoveries`nServers with Issues: $totalIssueServers"
+
+                # Build per-server fields
+                $summaryFields = @()
+                foreach ($srv in $serverResults) {
+                    $includeSrv = $includeHealthy -or ($srv.Status -eq 'issue') -or ($srv.Status -eq 'maintenance') -or ($srv.Recoveries -gt 0) -or ($srv.Suppressed -gt 0)
+                    if ($includeSrv) {
+                        $statusMap = @{ healthy = "Healthy"; issue = "Issue (" + $srv.Issues + " failed)"; skipped = "Skipped"; maintenance = "Maintenance Mode" }
+                        $fieldValue = $statusMap[$srv.Status]
+                        $summaryFields += @{ name = $srv.Name; value = $fieldValue; inline = $true }
+                    }
+                }
+
+                if ($summaryFields.Count -gt 0) {
+                    $embed = @{
+                        title       = $summaryTitle
+                        description = $summaryDesc
+                        color       = $embedColor
+                        fields      = $summaryFields
+                        timestamp   = [DateTime]::UtcNow.ToString("o")
+                    }
+                    $body = @{ embeds = @($embed) } | ConvertTo-Json -Depth 4
+
+                    try {
+                        Invoke-RestMethod -Uri $summaryWebhookUrl -Method Post -ContentType "application/json" -Body $body -ErrorAction Stop | Out-Null
+                        Write-QORunLog -Path $runLogPath -Message 'Summary embed sent to Discord.'
+                    }
+                    catch {
+                        Write-QORunLog -Path $runLogPath -Message 'Summary embed failed to send.'
+                    }
+
+                    $summaryState = Set-QOAlertSent -State $summaryState -AlertKey "summary_sent"
+                    Write-QOState -StatePath $summaryStatePath -State $summaryState | Out-Null
+                }
+            }
+        }
+    }
+}
+
 Write-QORunLog -Path $runLogPath -Message ('= ' * 25)
 Write-QORunLog -Path $runLogPath -Message ('Summary: ' + $totalServers + ' server(s), ' + $totalChecks + ' check(s), ' + $totalAlerts + ' alert(s) sent, ' + $totalSuppressed + ' suppressed, ' + $totalRecoveries + ' recovery alert(s).')
 Write-QORunLog -Path $runLogPath -Message 'QuestOps Watchdog v0.1 - Run finished'

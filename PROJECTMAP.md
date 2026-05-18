@@ -72,10 +72,11 @@ questops-watchdog/
 | 5 — Polish & Hardening | Config validation on run, encoding fixes, edge case hardening |
 | 6 — Maintenance Mode | Flag-file based maintenance mode, alert suppression during planned downtime |
 | 7 — Recovery Alerts | Send one-time success notifications when a failing check recovers |
+| 8 — Summary Embed | Optional grouped Discord summary at end of each run |
 
 ## Current Phase
 
-**Phase 7 — Recovery Alerts (complete)**
+**Phase 8 — Summary Embed (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -103,6 +104,7 @@ Completed:
   - Task 13: Added -ValidateConfig switch — calls validate_config.ps1 before running checks; stops safely if config is invalid
   - Task 14: Added maintenance mode support — per-server maintenance.enabled + flagPath; checks run, logs write, alerts suppressed; $totalSuppressed counter in summary
   - Task 15: Added recovery alerts — tracks active failures via Set-QOAlertActive/Clear-QOAlertActive/Test-QOAlertActive in lib/state.ps1; sends one `success` recovery embed per transition from failing to healthy; respects maintenance mode; $totalRecoveries counter in summary
+  - Task 16: Added optional grouped run summary embed — configurable via top-level `summary` section; collects per-server results (healthy/issue/skipped/maintenance); sends one Discord embed at end of run with rollup counts and per-server fields; respects sendOnlyOnIssues, includeHealthyServers, and cooldownMinutes settings; cooldown tracked in `__summary__/state.json`
 - scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
 - scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
 - scripts/validate_config.ps1 — Config file validator (checks structure, fields, webhook env var safety; exits 0/1)
@@ -126,6 +128,9 @@ Testing verified:
 - Recovery alerts suppressed during maintenance mode or when webhook URL is not set
 - active_failures tracked in per-server state via Set-QOAlertActive / Clear-QOAlertActive / Test-QOAlertActive
 - lib/state.ps1 functions: Set-QOAlertActive, Clear-QOAlertActive, Test-QOAlertActive
+- Summary embed sends grouped Discord embed with per-server fields at end of run
+- Summary respects cooldown, sendOnlyOnIssues, and includeHealthyServers settings
+- Summary section added to all config files (disabled by default)
 
 ## Assumptions
 
@@ -145,4 +150,4 @@ Testing verified:
 
 ## Next Recommended Step
 
-Add HTML-formatted log file for run results. Currently logs are plain text only. An HTML report (e.g. `logs/questops-watchdog-YYYY-MM-DD.html`) could provide a more readable summary with colour-coded check results, server status tables, and alert history. Would be served or viewed locally — no cloud.
+Add `diagnosis.ps1` library — a human-readable issue summary generator that reads state files and produces plain-text summaries of current server health, recent failures, and recovery history. Useful for local health checks without Discord.

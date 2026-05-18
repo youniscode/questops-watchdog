@@ -15,6 +15,13 @@
     "defaultCooldownMinutes": 30
   },
 
+  "summary": {
+    "enabled": false,
+    "sendOnlyOnIssues": true,
+    "includeHealthyServers": false,
+    "cooldownMinutes": 30
+  },
+
   "servers": [
     {
       "name": "Valheim",

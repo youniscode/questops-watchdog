@@ -177,6 +177,28 @@ The `active_failures` list is tracked in per-server state files under `state/<Se
 3. Discord webhook is configured
 4. Maintenance mode is not active
 
+## Run Summary Embed
+
+At the end of each run, the watchdog can optionally send one grouped Discord summary embed showing the overall run health — total servers, checks, alerts, suppressed, recoveries, and per-server status fields.
+
+Config (placed at the top level, alongside `discord` and `global`):
+
+```json
+"summary": {
+  "enabled": false,
+  "sendOnlyOnIssues": true,
+  "includeHealthyServers": false,
+  "cooldownMinutes": 30
+}
+```
+
+- `enabled` — set to `true` to enable summary embeds
+- `sendOnlyOnIssues` — when `true`, only sends summary if there are issues, recoveries, or suppressed alerts
+- `includeHealthyServers` — when `false`, only servers with issues/maintenance/recoveries appear in fields
+- `cooldownMinutes` — prevents sending repeated summary embeds (uses `__summary__/state.json`)
+
+Summary embed fields show per-server status: "Healthy", "Issue (N failed)", "Maintenance Mode", or "Skipped".
+
 ## Running
 
 Run the main watchdog from the project root:
