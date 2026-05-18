@@ -103,9 +103,10 @@ function Write-QORunLog {
 # ---------------------------------------------------------------------------
 # Run summary counters
 # ---------------------------------------------------------------------------
-$totalServers = 0
-$totalChecks  = 0
-$totalAlerts  = 0
+$totalServers    = 0
+$totalChecks     = 0
+$totalAlerts     = 0
+$totalSuppressed = 0
 $runTimestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
 
 Write-Host "QuestOps Watchdog v0.1" -ForegroundColor Cyan
@@ -149,6 +150,23 @@ foreach ($server in $config.servers) {
     $cooldownMinutes = if ($server.discord.cooldownMinutes) { $server.discord.cooldownMinutes } else { $globalDefaultCooldown }
 
     # -----------------------------------------------------------------------
+    # Maintenance mode detection
+    # -----------------------------------------------------------------------
+    $maintenanceSuppress = $false
+    if ($server.maintenance -and $server.maintenance.enabled) {
+        $flagPath = $server.maintenance.flagPath
+        if (-not [System.IO.Path]::IsPathRooted($flagPath)) {
+            $flagPath = Join-Path -Path $projectRoot -ChildPath $flagPath
+        }
+        if (Test-Path -LiteralPath $flagPath -PathType Leaf) {
+            $maintenanceSuppress = if ($server.maintenance.suppressAlerts) { $true } else { $false }
+            $mmLabel = if ($maintenanceSuppress) { 'suppressed' } else { 'not suppressed' }
+            Write-Host "  MAINTENANCE : active (alerts $mmLabel)" -ForegroundColor Magenta
+            Write-QORunLog -Path $runLogPath -Message ('  MAINTENANCE : active (alerts ' + $mmLabel + ')')
+        }
+    }
+
+    # -----------------------------------------------------------------------
     # Process check
     # -----------------------------------------------------------------------
     if ($server.process.enabled) {
@@ -157,23 +175,29 @@ foreach ($server in $config.servers) {
         $result   = Test-QOProcessRunning -ProcessName $procName
 
         if (-not $result.Running) {
-            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "process_stopped" -CooldownMinutes $cooldownMinutes
-            if ($cooldown.CanSend -and $webhookUrl) {
-                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
-                    -Title "Process Stopped" `
-                    -Description "Server process '$($server.process.name)' is not running." `
-                    -Severity critical `
-                    -ServerName $server.name
-                if ($sent) {
-                    $state = Set-QOAlertSent -State $state -AlertKey "process_stopped"
-                    $stateChanged = $true
-                    $totalAlerts++
-                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: process_stopped for ' + $server.process.name)
-                }
+            if ($maintenanceSuppress) {
+                $totalSuppressed++
+                Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: process_stopped (maintenance mode)'
             }
             else {
-                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: process_stopped (' + $suppressReason + ')')
+                $cooldown = Test-QOAlertCooldown -State $state -AlertKey "process_stopped" -CooldownMinutes $cooldownMinutes
+                if ($cooldown.CanSend -and $webhookUrl) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Process Stopped" `
+                        -Description "Server process '$($server.process.name)' is not running." `
+                        -Severity critical `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $state = Set-QOAlertSent -State $state -AlertKey "process_stopped"
+                        $stateChanged = $true
+                        $totalAlerts++
+                        Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: process_stopped for ' + $server.process.name)
+                    }
+                }
+                else {
+                    $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: process_stopped (' + $suppressReason + ')')
+                }
             }
             Write-Host ("  PROCESS : STOPPED") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message '  PROCESS : STOPPED'
@@ -192,23 +216,29 @@ foreach ($server in $config.servers) {
         $result = Test-QOLogFreshness -Path $server.logFile.path -MaxAgeMinutes $server.logFile.maxAgeMinutes
 
         if (-not $result.Fresh) {
-            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "log_stale" -CooldownMinutes $cooldownMinutes
-            if ($cooldown.CanSend -and $webhookUrl) {
-                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
-                    -Title "Log Stale" `
-                    -Description "Server log has not updated in $($result.AgeMinutes) minutes (limit $($server.logFile.maxAgeMinutes) min)." `
-                    -Severity warning `
-                    -ServerName $server.name
-                if ($sent) {
-                    $state = Set-QOAlertSent -State $state -AlertKey "log_stale"
-                    $stateChanged = $true
-                    $totalAlerts++
-                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: log_stale (age ' + $result.AgeMinutes + ' min)')
-                }
+            if ($maintenanceSuppress) {
+                $totalSuppressed++
+                Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: log_stale (maintenance mode)'
             }
             else {
-                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: log_stale (' + $suppressReason + ')')
+                $cooldown = Test-QOAlertCooldown -State $state -AlertKey "log_stale" -CooldownMinutes $cooldownMinutes
+                if ($cooldown.CanSend -and $webhookUrl) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Log Stale" `
+                        -Description "Server log has not updated in $($result.AgeMinutes) minutes (limit $($server.logFile.maxAgeMinutes) min)." `
+                        -Severity warning `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $state = Set-QOAlertSent -State $state -AlertKey "log_stale"
+                        $stateChanged = $true
+                        $totalAlerts++
+                        Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: log_stale (age ' + $result.AgeMinutes + ' min)')
+                    }
+                }
+                else {
+                    $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: log_stale (' + $suppressReason + ')')
+                }
             }
             Write-Host ("  LOG     : STALE ($($result.AgeMinutes) min)") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message ('  LOG     : STALE (age ' + $result.AgeMinutes + ' min)')
@@ -227,23 +257,29 @@ foreach ($server in $config.servers) {
         $result = Test-QOBackupFreshness -Path $server.backup.path -MaxAgeHours $server.backup.maxAgeHours
 
         if (-not $result.Fresh) {
-            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "backup_stale" -CooldownMinutes $cooldownMinutes
-            if ($cooldown.CanSend -and $webhookUrl) {
-                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
-                    -Title "Backup Stale" `
-                    -Description "Server backup has not updated in $($result.AgeHours) hours (limit $($server.backup.maxAgeHours) hr)." `
-                    -Severity warning `
-                    -ServerName $server.name
-                if ($sent) {
-                    $state = Set-QOAlertSent -State $state -AlertKey "backup_stale"
-                    $stateChanged = $true
-                    $totalAlerts++
-                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: backup_stale (age ' + $result.AgeHours + ' hr)')
-                }
+            if ($maintenanceSuppress) {
+                $totalSuppressed++
+                Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: backup_stale (maintenance mode)'
             }
             else {
-                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: backup_stale (' + $suppressReason + ')')
+                $cooldown = Test-QOAlertCooldown -State $state -AlertKey "backup_stale" -CooldownMinutes $cooldownMinutes
+                if ($cooldown.CanSend -and $webhookUrl) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Backup Stale" `
+                        -Description "Server backup has not updated in $($result.AgeHours) hours (limit $($server.backup.maxAgeHours) hr)." `
+                        -Severity warning `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $state = Set-QOAlertSent -State $state -AlertKey "backup_stale"
+                        $stateChanged = $true
+                        $totalAlerts++
+                        Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: backup_stale (age ' + $result.AgeHours + ' hr)')
+                    }
+                }
+                else {
+                    $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: backup_stale (' + $suppressReason + ')')
+                }
             }
             Write-Host ("  BACKUP  : STALE ($($result.AgeHours) hr)") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message ('  BACKUP  : STALE (age ' + $result.AgeHours + ' hr)')
@@ -263,23 +299,29 @@ foreach ($server in $config.servers) {
         $result = Test-QODiskSpace -DriveLetter $driveLetter -MinimumFreeGB $server.disk.minFreeGB
 
         if (-not $result.Healthy) {
-            $cooldown = Test-QOAlertCooldown -State $state -AlertKey "disk_low" -CooldownMinutes $cooldownMinutes
-            if ($cooldown.CanSend -and $webhookUrl) {
-                $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
-                    -Title "Disk Space Low" `
-                    -Description "Drive $driveLetter has $($result.FreeGB) GB free (minimum $($server.disk.minFreeGB) GB)." `
-                    -Severity warning `
-                    -ServerName $server.name
-                if ($sent) {
-                    $state = Set-QOAlertSent -State $state -AlertKey "disk_low"
-                    $stateChanged = $true
-                    $totalAlerts++
-                    Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: disk_low (free ' + $result.FreeGB + ' GB)')
-                }
+            if ($maintenanceSuppress) {
+                $totalSuppressed++
+                Write-QORunLog -Path $runLogPath -Message '  ALERT suppressed: disk_low (maintenance mode)'
             }
             else {
-                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: disk_low (' + $suppressReason + ')')
+                $cooldown = Test-QOAlertCooldown -State $state -AlertKey "disk_low" -CooldownMinutes $cooldownMinutes
+                if ($cooldown.CanSend -and $webhookUrl) {
+                    $sent = Send-QODiscordWebhook -WebhookUrl $webhookUrl `
+                        -Title "Disk Space Low" `
+                        -Description "Drive $driveLetter has $($result.FreeGB) GB free (minimum $($server.disk.minFreeGB) GB)." `
+                        -Severity warning `
+                        -ServerName $server.name
+                    if ($sent) {
+                        $state = Set-QOAlertSent -State $state -AlertKey "disk_low"
+                        $stateChanged = $true
+                        $totalAlerts++
+                        Write-QORunLog -Path $runLogPath -Message ('  ALERT sent: disk_low (free ' + $result.FreeGB + ' GB)')
+                    }
+                }
+                else {
+                    $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                    Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: disk_low (' + $suppressReason + ')')
+                }
             }
             Write-Host ("  DISK    : LOW ($($result.FreeGB) GB free)") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message ('  DISK    : LOW (free ' + $result.FreeGB + ' GB)')
@@ -300,7 +342,7 @@ foreach ($server in $config.servers) {
 # Final summary
 # ---------------------------------------------------------------------------
 Write-Host ("`n" + ("=" * 60))
-Write-Host "Summary: $totalServers server(s), $totalChecks check(s), $totalAlerts alert(s) sent." -ForegroundColor Cyan
+Write-Host "Summary: $totalServers server(s), $totalChecks check(s), $totalAlerts alert(s) sent, $totalSuppressed suppressed." -ForegroundColor Cyan
 Write-QORunLog -Path $runLogPath -Message ('= ' * 25)
-Write-QORunLog -Path $runLogPath -Message ('Summary: ' + $totalServers + ' server(s), ' + $totalChecks + ' check(s), ' + $totalAlerts + ' alert(s) sent.')
+Write-QORunLog -Path $runLogPath -Message ('Summary: ' + $totalServers + ' server(s), ' + $totalChecks + ' check(s), ' + $totalAlerts + ' alert(s) sent, ' + $totalSuppressed + ' suppressed.')
 Write-QORunLog -Path $runLogPath -Message 'QuestOps Watchdog v0.1 - Run finished'

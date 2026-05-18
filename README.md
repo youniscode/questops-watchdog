@@ -123,6 +123,43 @@ State management in `lib/state.ps1` prevents Discord spam by tracking when each 
 
 Each check type has its own cooldown timer, so a "process stopped" alert and a "disk low" alert fire independently.
 
+## Maintenance Mode
+
+Temporarily suppress Discord alerts for a server during planned maintenance. Checks still run and results appear in logs — only the Discord notification is suppressed.
+
+### Configuration
+
+Each server can have a `maintenance` section in the config:
+
+```json
+"maintenance": {
+  "enabled": false,
+  "flagPath": ".\\state\\maintenance\\my-server.flag",
+  "suppressAlerts": true
+}
+```
+
+- `enabled` — set to `true` to check for the flag file
+- `flagPath` — path to a flag file (create/remove this file to toggle maintenance)
+- `suppressAlerts` — when `true`, Discord alerts are suppressed during maintenance
+
+### Usage
+
+Create the flag file to enable maintenance mode, then remove it when done:
+
+```powershell
+# Enable maintenance mode (creates flag file)
+New-Item -ItemType File -Path ".\\state\\maintenance\\local-test.flag" -Force
+
+# Run the watchdog — checks run, logs write, alerts are suppressed
+powershell -File scripts\\questops_watchdog.ps1 -ConfigPath config\\servers.local.test.json
+
+# Disable maintenance mode (remove flag file)
+Remove-Item -LiteralPath ".\\state\\maintenance\\local-test.flag"
+```
+
+When maintenance is active, the console shows `MAINTENANCE : active (alerts suppressed)` per server, and the summary includes the suppressed count. Alerts suppressed by maintenance are logged separately from cooldown-suppressed alerts.
+
 ## Running
 
 Run the main watchdog from the project root:

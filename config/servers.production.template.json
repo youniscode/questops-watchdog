@@ -44,6 +44,12 @@
         "enabled": true
       },
 
+      "maintenance": {
+        "enabled": false,
+        "flagPath": ".\\state\\maintenance\\valheim.flag",
+        "suppressAlerts": true
+      },
+
       "discord": {
         "webhookUrlEnvVar": "QUESTOPS_DISCORD_WEBHOOK",
         "cooldownMinutes": 30
@@ -76,6 +82,12 @@
         "path": "C:\\REPLACE_ME\\Zomboid\\backups",
         "maxAgeHours": 48,
         "enabled": true
+      },
+
+      "maintenance": {
+        "enabled": false,
+        "flagPath": ".\\state\\maintenance\\zomboid.flag",
+        "suppressAlerts": true
       },
 
       "discord": {
@@ -112,6 +124,12 @@
         "enabled": true
       },
 
+      "maintenance": {
+        "enabled": false,
+        "flagPath": ".\\state\\maintenance\\minecraft.flag",
+        "suppressAlerts": true
+      },
+
       "discord": {
         "webhookUrlEnvVar": "QUESTOPS_DISCORD_WEBHOOK",
         "cooldownMinutes": 30
@@ -144,6 +162,12 @@
         "path": "C:\\REPLACE_ME\\ICARUS\\backups",
         "maxAgeHours": 48,
         "enabled": true
+      },
+
+      "maintenance": {
+        "enabled": false,
+        "flagPath": ".\\state\\maintenance\\icarus.flag",
+        "suppressAlerts": true
       },
 
       "discord": {
@@ -180,6 +204,12 @@
         "enabled": true
       },
 
+      "maintenance": {
+        "enabled": false,
+        "flagPath": ".\\state\\maintenance\\7days.flag",
+        "suppressAlerts": true
+      },
+
       "discord": {
         "webhookUrlEnvVar": "QUESTOPS_DISCORD_WEBHOOK",
         "cooldownMinutes": 30
@@ -212,6 +242,12 @@
         "path": "C:\\REPLACE_ME\\Windrose\\backups",
         "maxAgeHours": 48,
         "enabled": true
+      },
+
+      "maintenance": {
+        "enabled": false,
+        "flagPath": ".\\state\\maintenance\\windrose.flag",
+        "suppressAlerts": true
       },
 
       "discord": {

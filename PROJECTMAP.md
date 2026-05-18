@@ -70,10 +70,11 @@ questops-watchdog/
 | 3 — Runner + Schedule | Main loop, scheduled task integration, logging |
 | 4 — Testing + Polish | Test coverage, edge cases, documentation finalization |
 | 5 — Polish & Hardening | Config validation on run, encoding fixes, edge case hardening |
+| 6 — Maintenance Mode | Flag-file based maintenance mode, alert suppression during planned downtime |
 
 ## Current Phase
 
-**Phase 5 — Polish & Hardening (one task remaining)**
+**Phase 6 — Maintenance Mode (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -82,8 +83,8 @@ Completed:
 - AI_WORKSPACE_RULES.md
 - docs/install.md
 - config/servers.example.json (example config with Valheim + Project Zomboid)
-- config/servers.local.test.json (safe local test config — uses repo paths, enabled, 1-min cooldown)
-- config/servers.production.template.json (production template — all disabled, 6 game types: Valheim, Project Zomboid, Minecraft, ICARUS, 7 Days to Die, Windrose)
+- config/servers.local.test.json (safe local test config — uses repo paths, enabled, 1-min cooldown, includes disabled maintenance section)
+- config/servers.production.template.json (production template — all disabled, 6 game types, each includes disabled maintenance section with per-server flag paths)
 - lib/discord.ps1 — Send-QODiscordWebhook function (Discord embed alerts, severity colours, error-safe, true/false return)
 - scripts/test_discord.ps1 — Webhook test script (reads QUESTOPS_DISCORD_WEBHOOK env var, dot-sources lib, sends test embed)
 - lib/checks.ps1 — All four monitoring check functions:
@@ -99,6 +100,7 @@ Completed:
   - Set-QOAlertSent — records last-sent timestamp
 - scripts/questops_watchdog.ps1 — Main runner (reads config, runs checks, manages cooldowns, sends alerts, writes state/logs, daily log file with timestamps and all check results)
   - Task 13: Added -ValidateConfig switch — calls validate_config.ps1 before running checks; stops safely if config is invalid
+  - Task 14: Added maintenance mode support — per-server maintenance.enabled + flagPath; checks run, logs write, alerts suppressed; $totalSuppressed counter in summary
 - scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
 - scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
 - scripts/validate_config.ps1 — Config file validator (checks structure, fields, webhook env var safety; exits 0/1)
@@ -115,6 +117,9 @@ Testing verified:
 - Inline `if` expressions inside PowerShell string concatenation fixed in validate_config.ps1 (line 119)
 - Alert suppression messages fixed in questops_watchdog.ps1 (all 4 checks) — now distinguishes cooldown vs. missing webhook URL
 - -ValidateConfig switch calls validate_config.ps1 and aborts on failure
+- Maintenance mode suppresses Discord alerts while checks/logs continue running
+- maintenance section added to all config files (disabled by default, enabled by creating flag file)
+- Summary includes suppressed count
 
 ## Assumptions
 
@@ -134,4 +139,4 @@ Testing verified:
 
 ## Next Recommended Step
 
-Add success recovery alerts — when a previously-failing check passes again, send a "recovered" notification so admins know the issue resolved itself. Currently v0.1 only sends failure alerts; recovery is silent. Requires new embed handling in lib/discord.ps1 (success severity exists) and cooldown-aware recovery logic in the main runner.
+Add success recovery alerts — when a previously-failing check passes again, send a "recovered" notification so admins know the issue resolved itself. Currently v0.1 only sends failure alerts; recovery is silent. Requires tracking last check result (not just last alert sent) and cooldown-aware recovery logic in the main runner. The success severity already exists in Send-QODiscordWebhook.
