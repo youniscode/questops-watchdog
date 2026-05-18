@@ -99,6 +99,25 @@ Copy a config from `config/` to `config/servers.json` and edit:
 - All paths are examples; replace with your real server paths.
 - Per-server Discord webhook can override the global one via a different env var name.
 
+### Server Metadata: Category & Tags
+
+Each server can optionally include `category` (string) and `tags` (array of strings) for identification:
+
+```json
+{
+  "name": "Valheim",
+  "category": "survival",
+  "tags": ["valheim", "survival", "viking"],
+  "enabled": false,
+  ...
+}
+```
+
+- `category` — a single classification label (e.g. "survival", "sandbox", "mmo", "test")
+- `tags` — free-form array of identifiers for filtering or display
+- Both are optional; the run summary embed includes them in per-server field values when present
+- The config validator warns when enabled servers lack `category` or `tags`, and fails on type mismatches (category must be a string, tags must be an array)
+
 ## Discord Notifications
 
 QuestOps Watchdog sends Discord embed alerts via webhook.

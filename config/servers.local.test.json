@@ -25,6 +25,8 @@
   "servers": [
     {
       "name": "Local Test Server",
+      "category": "test",
+      "tags": ["local", "test", "windows"],
       "enabled": true,
       "notes": "Safe local test config. Checks PowerShell process and the repo's own logs directory. No production paths.",
 

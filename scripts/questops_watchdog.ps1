@@ -129,6 +129,7 @@ foreach ($server in $config.servers) {
         $serverResults += @{
             Name = $server.name; Status = "skipped"; Issues = 0
             Alerts = 0; Suppressed = 0; Recoveries = 0
+            Category = $server.category; Tags = $server.tags
         }
         Write-Host ("[SKIP]  $($server.name)") -ForegroundColor DarkGray
         Write-QORunLog -Path $runLogPath -Message ('SKIP   ' + $server.name)
@@ -439,6 +440,7 @@ foreach ($server in $config.servers) {
     $serverResults += @{
         Name = $server.name; Status = $srvStatus; Issues = $srvIssues
         Alerts = $srvAlerts; Suppressed = $srvSuppressed; Recoveries = $srvRecoveries
+        Category = $server.category; Tags = $server.tags
     }
 }
 
@@ -497,6 +499,10 @@ if ($config.summary -and $config.summary.enabled) {
                     if ($includeSrv) {
                         $statusMap = @{ healthy = "Healthy"; issue = "Issue (" + $srv.Issues + " failed)"; skipped = "Skipped"; maintenance = "Maintenance Mode" }
                         $fieldValue = $statusMap[$srv.Status]
+                        $metaParts = @()
+                        if ($srv.Category) { $metaParts += "Category: $($srv.Category)" }
+                        if ($srv.Tags) { $metaParts += "Tags: $($srv.Tags -join ', ')" }
+                        if ($metaParts.Count -gt 0) { $fieldValue += "`n" + ($metaParts -join ' | ') }
                         $summaryFields += @{ name = $srv.Name; value = $fieldValue; inline = $true }
                     }
                 }

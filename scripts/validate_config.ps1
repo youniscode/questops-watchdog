@@ -127,6 +127,26 @@ for ($i = 0; $i -lt $config.servers.Count; $i++) {
         }
     }
 
+    # category validation
+    if ($sv.PSObject.Properties.Name -contains 'category') {
+        if ($sv.category -isnot [string]) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" "category" must be a string.')
+        }
+    }
+    elseif ($sv.enabled) {
+        Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" is enabled but has no "category" field.')
+    }
+
+    # tags validation
+    if ($sv.PSObject.Properties.Name -contains 'tags') {
+        if ($sv.tags -isnot [array]) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" "tags" must be an array of strings.')
+        }
+    }
+    elseif ($sv.enabled) {
+        Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" is enabled but has no "tags" field.')
+    }
+
     # process check
     if ($sv.process -and $sv.process.enabled) {
         if (-not $sv.process.name) {

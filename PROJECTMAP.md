@@ -73,10 +73,11 @@ questops-watchdog/
 | 6 — Maintenance Mode | Flag-file based maintenance mode, alert suppression during planned downtime |
 | 7 — Recovery Alerts | Send one-time success notifications when a failing check recovers |
 | 8 — Summary Embed | Optional grouped Discord summary at end of each run |
+| 9 — Category/Tags Metadata | Per-server category and tags for identification, validation, and summary display |
 
 ## Current Phase
 
-**Phase 8 — Summary Embed (complete)**
+**Phase 9 — Category/Tags Metadata (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -131,6 +132,12 @@ Testing verified:
 - Summary embed sends grouped Discord embed with per-server fields at end of run
 - Summary respects cooldown, sendOnlyOnIssues, and includeHealthyServers settings
 - Summary section added to all config files (disabled by default)
+- Task 17 — Category/Tags Metadata:
+  - `config/servers.local.test.json`: added category "test" and tags ["local","test","windows"]
+  - `config/servers.production.template.json`: added category + unique tags to all 6 server entries
+  - `scripts/validate_config.ps1`: warns when enabled server lacks category/tags; fails on type mismatch
+  - `scripts/questops_watchdog.ps1`: stores Category/Tags in $serverResults; includes in summary embed field values when present
+  - `README.md`: documented category/tags fields and validation behavior
 
 ## Assumptions
 
@@ -150,4 +157,4 @@ Testing verified:
 
 ## Next Recommended Step
 
-Add `diagnosis.ps1` library — a human-readable issue summary generator that reads state files and produces plain-text summaries of current server health, recent failures, and recovery history. Useful for local health checks without Discord.
+Add `lib/diagnosis.ps1` — a human-readable issue summary generator that reads state files and produces plain-text summaries of current server health, recent failures, and recovery history. Useful for local health checks without Discord.
