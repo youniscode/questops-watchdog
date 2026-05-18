@@ -19,6 +19,20 @@ All checks are available in `lib/checks.ps1`:
 
 Each function returns `Success = $true/$false` and never modifies the system.
 
+### Production Template
+
+`config/servers.production.template.json` includes entries for all six supported game types:
+Valheim, Project Zomboid, Minecraft, ICARUS, 7 Days to Die, and Windrose.
+
+**All entries are disabled by default (`"enabled": false`).** Replace placeholder paths
+(`C:\\REPLACE_ME\\...`) with your real server paths, then enable one server at a time.
+
+Safe defaults in the template:
+- `minFreeGB`: 20
+- `cooldownMinutes`: 30
+- `backup maxAgeHours`: 48
+- Log max age varies by game (30 min most games, 45 min for ICARUS and Windrose)
+
 ### Quick Test
 
 ```powershell
@@ -62,7 +76,13 @@ questops-watchdog/
 
 ## Configuration
 
-Copy `config/servers.example.json` to `config/servers.json` and edit:
+Copy a config from `config/` to `config/servers.json` and edit:
+
+| Config File | Purpose |
+|-------------|---------|
+| `servers.example.json` | Reference example (all disabled, Valheim + Project Zomboid) |
+| `servers.local.test.json` | Safe test config (enabled, uses repo paths, 1-min cooldown) |
+| `servers.production.template.json` | Production template (all disabled, 6 game types, placeholder paths, 30-min cooldown) |
 
 ```json
 {
@@ -116,6 +136,9 @@ powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.json
 
 # Local test (enabled server, safe paths, short cooldown)
 powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.local.test.json
+
+# Validate production template (all servers disabled — safe to run)
+powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.production.template.json
 ```
 
 The local test config (`config/servers.local.test.json`) is pre-configured for safe testing:
