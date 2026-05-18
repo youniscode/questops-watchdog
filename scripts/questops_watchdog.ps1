@@ -153,7 +153,8 @@ foreach ($server in $config.servers) {
                 }
             }
             else {
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: process_stopped (' + $cooldown.Message + ')')
+                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: process_stopped (' + $suppressReason + ')')
             }
             Write-Host ("  PROCESS : STOPPED") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message '  PROCESS : STOPPED'
@@ -187,7 +188,8 @@ foreach ($server in $config.servers) {
                 }
             }
             else {
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: log_stale (' + $cooldown.Message + ')')
+                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: log_stale (' + $suppressReason + ')')
             }
             Write-Host ("  LOG     : STALE ($($result.AgeMinutes) min)") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message ('  LOG     : STALE (age ' + $result.AgeMinutes + ' min)')
@@ -221,7 +223,8 @@ foreach ($server in $config.servers) {
                 }
             }
             else {
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: backup_stale (' + $cooldown.Message + ')')
+                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: backup_stale (' + $suppressReason + ')')
             }
             Write-Host ("  BACKUP  : STALE ($($result.AgeHours) hr)") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message ('  BACKUP  : STALE (age ' + $result.AgeHours + ' hr)')
@@ -256,7 +259,8 @@ foreach ($server in $config.servers) {
                 }
             }
             else {
-                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: disk_low (' + $cooldown.Message + ')')
+                $suppressReason = if (-not $cooldown.CanSend) { $cooldown.Message } else { 'no webhook URL configured' }
+                Write-QORunLog -Path $runLogPath -Message ('  ALERT suppressed: disk_low (' + $suppressReason + ')')
             }
             Write-Host ("  DISK    : LOW ($($result.FreeGB) GB free)") -ForegroundColor Red
             Write-QORunLog -Path $runLogPath -Message ('  DISK    : LOW (free ' + $result.FreeGB + ' GB)')

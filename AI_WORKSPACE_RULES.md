@@ -48,9 +48,9 @@ Do NOT touch, modify, read, or scan:
 - Small readable files with clear comments
 - Safe defaults and defensive coding
 
-## MVP Scope (v0.1)
+## MVP Scope (v0.1) — Complete
 
-Allowed:
+All MVP features built and tested:
 1. Read monitored servers from JSON config
 2. Check if process is running
 3. Check log freshness
@@ -60,8 +60,11 @@ Allowed:
 7. Write local state files
 8. Write local logs
 9. Support multiple monitored servers
+10. Config validation script
+11. Scheduled task installer/uninstaller
+12. End-to-end testing with local test config
 
-Not allowed yet:
+Not in scope (future):
 - AI diagnosis engine
 - Web dashboard
 - Cloud sync

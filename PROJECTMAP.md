@@ -47,7 +47,8 @@ questops-watchdog/
 │   ├── questops_watchdog.ps1  Main runner (reads config, runs checks, sends alerts)
 │   ├── test_discord.ps1       Discord webhook test script
 │   ├── install_task.ps1       Scheduled task installer
-│   └── uninstall_task.ps1     Scheduled task uninstaller
+│   ├── uninstall_task.ps1     Scheduled task uninstaller
+│   └── validate_config.ps1    Config file validator
 ├── lib/
 │   ├── checks.ps1       Monitoring checks (Test-QOProcessRunning, Test-QOLogFreshness, Test-QOBackupFreshness, Test-QODiskSpace)
 │   ├── discord.ps1      Discord webhook sender (Send-QODiscordWebhook)
@@ -71,7 +72,7 @@ questops-watchdog/
 
 ## Current Phase
 
-**Phase 3 — Runner + Schedule (complete)**
+**Phase 4 — Testing + Polish (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -98,6 +99,18 @@ Completed:
 - scripts/questops_watchdog.ps1 — Main runner (reads config, runs checks, manages cooldowns, sends alerts, writes state/logs, daily log file with timestamps and all check results)
 - scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
 - scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
+- scripts/validate_config.ps1 — Config file validator (checks structure, fields, webhook env var safety; exits 0/1)
+
+Testing verified:
+- All 4 checks run and report correctly with test config (process=running, log/backup=fresh, disk=OK)
+- Process failure correctly detected (STOPPED) when process name is invalid
+- Alert suppression logged with accurate reason ("no webhook URL configured") when no Discord webhook is set
+- Cooldown suppression works — cooldown message shown when cooldown is active
+- Daily log file created with timestamps, check results, alert/suppression entries, and summary
+- State files created only when alerts are actually sent (not on suppression)
+- All 3 config files pass validation (servers.local.test.json, servers.example.json, servers.production.template.json)
+- Inline `if` expressions inside PowerShell string concatenation fixed in validate_config.ps1 (line 119)
+- Alert suppression messages fixed in questops_watchdog.ps1 (all 4 checks) — now distinguishes cooldown vs. missing webhook URL
 
 ## Assumptions
 

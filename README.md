@@ -193,6 +193,17 @@ powershell -File scripts\uninstall_task.ps1 -TaskName "Custom Task Name"
 - Some systems require running PowerShell as Administrator to register scheduled tasks
 - Always test with `config/servers.local.test.json` first before switching to production configs
 
+## Config Validation
+
+Validate a config before running the watchdog:
+
+```powershell
+powershell -File scripts\validate_config.ps1 -ConfigPath config\servers.local.test.json
+powershell -File scripts\validate_config.ps1 -ConfigPath config\servers.production.template.json
+```
+
+The validator checks: file exists, valid JSON, required fields present, each server has name/enabled, each enabled check has needed fields, and Discord webhook uses an environment variable name (not a direct URL). Exits 0 on pass, 1 on failure. Never sends alerts or modifies files.
+
 ## Setup
 
 See [docs/install.md](docs/install.md) for manual setup instructions.
