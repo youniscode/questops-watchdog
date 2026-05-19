@@ -75,10 +75,11 @@ questops-watchdog/
 | 8 — Summary Embed | Optional grouped Discord summary at end of each run |
 | 9 — Category/Tags Metadata | Per-server category and tags for identification, validation, and summary display |
 | 10 — Validation Hardening | Production-ready config validation: numeric thresholds, type safety, path checks, Discord safety, summary consistency |
+| 11 — Task Installer Hardening | Safe scheduled task installer with pre-install config validation, clear install summary, and persistent -ValidateConfig in task action |
 
 ## Current Phase
 
-**Phase 10 — Validation Hardening (complete)**
+**Phase 11 — Task Installer Hardening (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -107,7 +108,7 @@ Completed:
   - Task 14: Added maintenance mode support — per-server maintenance.enabled + flagPath; checks run, logs write, alerts suppressed; $totalSuppressed counter in summary
   - Task 15: Added recovery alerts — tracks active failures via Set-QOAlertActive/Clear-QOAlertActive/Test-QOAlertActive in lib/state.ps1; sends one `success` recovery embed per transition from failing to healthy; respects maintenance mode; $totalRecoveries counter in summary
   - Task 16: Added optional grouped run summary embed — configurable via top-level `summary` section; collects per-server results (healthy/issue/skipped/maintenance); sends one Discord embed at end of run with rollup counts and per-server fields; respects sendOnlyOnIssues, includeHealthyServers, and cooldownMinutes settings; cooldown tracked in `__summary__/state.json`
-- scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
+- scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes, ValidateConfig; validates paths; interactive user only; no passwords; pre-install config validation via -ValidateConfig; persistent -ValidateConfig in task action; clear install summary)
 - scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
 - scripts/validate_config.ps1 — Config file validator (checks structure, fields, webhook env var safety, numeric thresholds, type safety, path validation; exits 0/1)
 
@@ -156,6 +157,15 @@ Testing verified:
     - Summary warns if sendOnlyOnIssues or includeHealthyServers are missing
     - Placeholder path check now per-server (checks each field individually instead of raw file scan)
     - Missing path on enabled check warns instead of fails
+- Task 19 — Task Installer Hardening:
+  - `scripts/install_task.ps1` — added -ValidateConfig switch:
+    - Calls validate_config.ps1 before registering the task if -ValidateConfig is used
+    - Aborts installation with exit 1 if validation fails
+    - Verifies validate_config.ps1 exists before calling it
+    - Task action includes -ValidateConfig when installer was called with -ValidateConfig
+    - Clear install summary showing task name, interval, resolved config path, validation enabled (Yes/No), runner path
+    - No secrets printed
+  - `README.md`: updated Scheduled Task section with safe install command, -ValidateConfig usage, and uninstall command
 
 ## Assumptions
 

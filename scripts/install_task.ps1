@@ -11,12 +11,18 @@
 
 .PARAMETER IntervalMinutes
     Minutes between each run (default: 5).
+
+.PARAMETER ValidateConfig
+    If set, validates the config file with validate_config.ps1 before
+    registering the task. The task action will also include -ValidateConfig
+    so every scheduled run validates before executing checks.
 #>
 
 param(
     [string]$ConfigPath,
     [string]$TaskName = "QuestOps Watchdog",
-    [int]$IntervalMinutes = 5
+    [int]$IntervalMinutes = 5,
+    [switch]$ValidateConfig
 )
 
 # ---------------------------------------------------------------------------
@@ -46,9 +52,33 @@ if (-not (Test-Path -LiteralPath $resolvedConfigPath -PathType Leaf)) {
 }
 
 # ---------------------------------------------------------------------------
+# Optional config validation before install
+# ---------------------------------------------------------------------------
+if ($ValidateConfig) {
+    $validatorPath = Join-Path -Path $scriptRoot -ChildPath "validate_config.ps1"
+
+    if (-not (Test-Path -LiteralPath $validatorPath -PathType Leaf)) {
+        Write-Host "ERROR: Validator script not found: $validatorPath" -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host "Validating config before install..." -ForegroundColor Cyan
+    & $validatorPath -ConfigPath $resolvedConfigPath
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Config validation failed. Installation aborted." -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "Config validation passed.`n" -ForegroundColor Green
+}
+
+# ---------------------------------------------------------------------------
 # Build scheduled task action
 # ---------------------------------------------------------------------------
 $argument = "-NoProfile -ExecutionPolicy Bypass -File `"$runnerPath`" -ConfigPath `"$resolvedConfigPath`""
+
+if ($ValidateConfig) {
+    $argument = $argument + " -ValidateConfig"
+}
 
 try {
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argument -WorkingDirectory $projectRoot
@@ -100,10 +130,15 @@ try {
         -Force `
         -ErrorAction Stop
 
+    $validationLabel = if ($ValidateConfig) { 'Yes' } else { 'No' }
+
     Write-Host "SUCCESS: Scheduled task '$TaskName' created." -ForegroundColor Green
-    Write-Host "  Runs every $IntervalMinutes minute(s)" -ForegroundColor Cyan
-    Write-Host "  Config: $resolvedConfigPath" -ForegroundColor Cyan
-    Write-Host "  User:   $env:USERNAME (interactive only)" -ForegroundColor Cyan
+    Write-Host "  Task name:   $TaskName" -ForegroundColor Cyan
+    Write-Host "  Interval:    Every $IntervalMinutes minute(s)" -ForegroundColor Cyan
+    Write-Host "  Config path: $resolvedConfigPath" -ForegroundColor Cyan
+    Write-Host "  Validation:  $validationLabel" -ForegroundColor Cyan
+    Write-Host "  Runner:      $runnerPath" -ForegroundColor Cyan
+    Write-Host "  User:        $env:USERNAME (interactive only)" -ForegroundColor Cyan
     Write-Host "`nThe task is registered but NOT started automatically." -ForegroundColor Yellow
     Write-Host "To start it now, open Task Scheduler or run:" -ForegroundColor Yellow
     Write-Host "  Start-ScheduledTask -TaskName `"$TaskName`"" -ForegroundColor Yellow

@@ -266,15 +266,24 @@ $env:QUEST_OPS_DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/your-id/your-
 Install a repeating scheduled task (runs every 5 minutes by default):
 
 ```powershell
-# Use the local test config first (safe, no production paths)
+# Use the local test config first (safe, no production paths, with validation)
+powershell -File scripts\install_task.ps1 -ConfigPath config\servers.local.test.json -ValidateConfig
+
+# Install without validation
 powershell -File scripts\install_task.ps1 -ConfigPath config\servers.local.test.json
 
-# Use your production config when ready
-powershell -File scripts\install_task.ps1 -ConfigPath config\servers.json
+# Use your production config when ready (with validation)
+powershell -File scripts\install_task.ps1 -ConfigPath config\servers.json -ValidateConfig
 
 # Custom interval (every 10 minutes)
 powershell -File scripts\install_task.ps1 -ConfigPath config\servers.json -IntervalMinutes 10
 ```
+
+When `-ValidateConfig` is used:
+1. The config is validated by `scripts/validate_config.ps1` before the task is created
+2. If validation fails, installation is aborted with exit 1
+3. If validation passes, the task action includes `-ValidateConfig` so every scheduled run validates before executing checks
+4. The install summary shows `Validation: Yes`
 
 Uninstall the scheduled task:
 
