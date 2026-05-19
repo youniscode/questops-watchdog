@@ -80,12 +80,16 @@ questops-watchdog/
 | 12 — Release Packaging | Clean release ZIP packaging with versioning, exclusion rules, and idempotent builds |
 | 13 — Install Guide Rewrite | Beginner-friendly installation guide with step-by-step setup, environment variables, config editing, validation, scheduled task, maintenance, and troubleshooting |
 | 14 — CHANGELOG & Version Tracking | VERSION file and CHANGELOG.md for release tracking; version-aware packaging; version badge in README |
+| 15 — README Polish | Professional GitHub/Fiverr-ready README rewrite with features section, safety section, supported server types, roadmap, screenshot placeholders, and portfolio-friendly tone |
+| 16 — Demo and Screenshot Assets | Demo files for summary, validation, maintenance, recovery, and packaging workflows; architecture document; screenshot placeholder directory |
 
 ## Current Phase
 
-**Phase 14 — CHANGELOG & Version Tracking (complete)**
+**Phase 16 — Demo and Screenshot Assets (complete)**
 
 Version: **v0.1.22**
+
+MVP maturity: **Beta** — all core features functional, config validation hardened, release pipeline established, documentation complete, README presentation-ready, demo assets available for portfolio and Fiverr gallery.
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -201,6 +205,31 @@ Testing verified:
   - `scripts/package_release.ps1` — reads VERSION file when -Version not provided; strips leading "v" to avoid double v in folder/filename; includes CHANGELOG.md and VERSION in root files
   - `README.md` — added version badge and CHANGELOG link at top; updated packaging examples
   - `PROJECTMAP.md` — added Phase 14, updated Current Phase to v0.1.22
+- Task 23 — README Polish:
+  - `README.md` — full rewrite for GitHub and Fiverr credibility:
+    - Strong top section with project name, version, and professional tagline
+    - Features section grouped by capability (Monitoring, Validation, Alerting, Maintenance, Operations, Recovery)
+    - Supported server types list with production template reference
+    - Why This Exists value proposition (lightweight, local-first, PowerShell-native, safe)
+    - Quick Start section (extract, webhook, validate, run, schedule)
+    - Safety section (no secrets in JSON, validation before execution, maintenance mode, local-only, disabled by default)
+    - How It Works (checks table, alerting, state/logging)
+    - Configuration overview with validator rules table
+    - Screenshots section with markdown placeholders (validation, summary alert, maintenance mode)
+    - Release packaging section
+    - Roadmap with realistic upcoming items (no AI/cloud/auto-healing hype)
+    - Practical, operations-focused tone suitable for Fiverr portfolio and GitHub visitors
+    - Professional markdown with bullets, command blocks, tables, no emoji spam, no walls of text
+  - `PROJECTMAP.md` — added Phase 15, updated Current Phase to v0.1.22, added MVP maturity estimate (Beta)
+- Task 24 — Demo and Screenshot Assets:
+  - `docs/assets/demo/demo-summary.md` — realistic grouped summary example with 4 server states (healthy, maintenance, failing, recovery), console output, Discord embed fields, configuration, and rollup counts
+  - `docs/assets/demo/demo-validation.md` — three validator scenarios: clean pass, pass with warnings (placeholder paths, missing metadata), and failure (webhook URL in JSON, missing process name, negative threshold)
+  - `docs/assets/demo/demo-maintenance.md` — maintenance mode workflow: config, flag-file activation, console output showing suppression, deactivation, and behavior details
+  - `docs/assets/demo/demo-recovery.md` — recovery alert flow: state file with active failure, failure detection run, recovery detection run, cleared state file, recovery rules table, console output with recovery counter
+  - `docs/assets/demo/demo-package.md` — release packaging: command, console output, generated folder tree, included/excluded items list, characteristics
+  - `docs/assets/architecture.md` — clean text architecture diagram with data flow, execution flow (config/validator/runner/checks/state/logs/discord), library component reference, state storage layout, scheduled task integration, release packaging, and runtime characteristics
+  - `README.md` — replaced old Screenshots placeholder section with Screenshots and Demo Assets section linking all 6 demo files and architecture document; added screenshot placeholder directory reference with 6 expected capture filenames
+  - `docs/assets/screenshots/` — empty directory reserved for future screenshot captures
 
 ## Assumptions
 
