@@ -83,14 +83,15 @@ questops-watchdog/
 | 15 — README Polish | Professional GitHub/Fiverr-ready README rewrite with features section, safety section, supported server types, roadmap, screenshot placeholders, and portfolio-friendly tone |
 | 16 — Demo and Screenshot Assets | Demo files for summary, validation, maintenance, recovery, and packaging workflows; architecture document; screenshot placeholder directory |
 | 17 — Fiverr Service Assets | Complete Fiverr service package: gig description, packages, FAQ, title options, search tags, portfolio summary, delivery checklist |
+| 18 — MVP QA and Release Checklists | QA checklist covering repository hygiene, config validation, manual runs, scheduled task, packaging, security, documentation; release checklist covering version bump, QA, packaging, tagging, GitHub release |
 
 ## Current Phase
 
-**Phase 17 — Fiverr Service Assets (complete)**
+**Phase 18 — MVP QA and Release Checklists (complete)**
 
 Version: **v0.1.22**
 
-MVP maturity: **Beta** — all core features functional, config validation hardened, release pipeline established, documentation complete, README presentation-ready, demo assets available, Fiverr service package ready for listing.
+MVP maturity: **Beta** — all core features functional, config validation hardened, release pipeline established, documentation complete, README presentation-ready, demo assets available, Fiverr service package ready for listing, QA and release processes documented.
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -239,6 +240,26 @@ Testing verified:
   - `marketing/fiverr/search-tags.md` — primary keywords, secondary keywords, long-tail keywords, platform-specific tags organized by search intent
   - `marketing/fiverr/portfolio-summary.md` — professional one-page summary: one-liner, stack, features, supported games, safety design, target users, availability
   - `marketing/fiverr/delivery-checklist.md` — tiered checklist: per-order basics, Standard additions, Premium additions, deliverable files list, explicit not-delivered list
+- Task 26 — MVP QA and Release Checklists:
+  - `docs/qa-checklist.md` — comprehensive manual QA checklist with 7 sections:
+    - Repository hygiene: clean git status, ignored directories, no stale files
+    - Config validation: 10 tests covering pass/fail scenarios for all validator checks
+    - Manual watchdog run: 5 subsections (healthy test, failure alert, recovery alert, maintenance suppression, summary reporting)
+    - Scheduled task: install with validation, verify in Task Scheduler, start, uninstall, graceful missing-task handling
+    - Release packaging: version correctness, folder/zip creation, included/excluded items, ZIP validity
+    - Security/safety: no webhook URLs in JSON, no live paths in templates, no file modification, no secrets in ZIP
+    - Documentation: README rendering, link validity, changelog/version alignment, Fiverr/demo/asset presence
+  - `docs/release-checklist.md` — step-by-step release process with 7 stages:
+    - Pre-release: changes committed, QA passed, clean working tree
+    - Bump version: VERSION, CHANGELOG, README, PROJECTMAP updates with commit message convention
+    - Run QA checklist: full execution required before proceeding
+    - Package release: run packaging script, verify structure
+    - Inspect release ZIP: corruption check, spot-check files, exclusion verification
+    - Create git tag with message, push tag and branch
+    - Optional GitHub release with changelog entry and ZIP attachment
+    - Post-release: update Fiverr and portfolio references
+  - `README.md` — added QA Checklist and Release Checklist links to Project Resources
+  - `PROJECTMAP.md` — added Phase 18, updated Current Phase to v0.1.22
 
 ## Assumptions
 

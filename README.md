@@ -199,3 +199,5 @@ No AI diagnosis, no cloud sync, no auto-healing, no mobile apps — staying focu
 - [Changelog](CHANGELOG.md) — release history
 - [Project Map](PROJECTMAP.md) — architecture, phases, testing notes
 - [Config Templates](config/) — example, test, and production configs
+- [QA Checklist](docs/qa-checklist.md) — manual test procedure for releases
+- [Release Checklist](docs/release-checklist.md) — step-by-step release process
