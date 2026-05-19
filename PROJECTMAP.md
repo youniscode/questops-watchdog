@@ -82,14 +82,15 @@ questops-watchdog/
 | 14 — CHANGELOG & Version Tracking | VERSION file and CHANGELOG.md for release tracking; version-aware packaging; version badge in README |
 | 15 — README Polish | Professional GitHub/Fiverr-ready README rewrite with features section, safety section, supported server types, roadmap, screenshot placeholders, and portfolio-friendly tone |
 | 16 — Demo and Screenshot Assets | Demo files for summary, validation, maintenance, recovery, and packaging workflows; architecture document; screenshot placeholder directory |
+| 17 — Fiverr Service Assets | Complete Fiverr service package: gig description, packages, FAQ, title options, search tags, portfolio summary, delivery checklist |
 
 ## Current Phase
 
-**Phase 16 — Demo and Screenshot Assets (complete)**
+**Phase 17 — Fiverr Service Assets (complete)**
 
 Version: **v0.1.22**
 
-MVP maturity: **Beta** — all core features functional, config validation hardened, release pipeline established, documentation complete, README presentation-ready, demo assets available for portfolio and Fiverr gallery.
+MVP maturity: **Beta** — all core features functional, config validation hardened, release pipeline established, documentation complete, README presentation-ready, demo assets available, Fiverr service package ready for listing.
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -230,6 +231,14 @@ Testing verified:
   - `docs/assets/architecture.md` — clean text architecture diagram with data flow, execution flow (config/validator/runner/checks/state/logs/discord), library component reference, state storage layout, scheduled task integration, release packaging, and runtime characteristics
   - `README.md` — replaced old Screenshots placeholder section with Screenshots and Demo Assets section linking all 6 demo files and architecture document; added screenshot placeholder directory reference with 6 expected capture filenames
   - `docs/assets/screenshots/` — empty directory reserved for future screenshot captures
+- Task 25 — Fiverr Service Assets:
+  - `marketing/fiverr/gig-description.md` — clear intro, supported games list, features, what buyer receives, what is not included, delivery format; practical operations-focused tone
+  - `marketing/fiverr/packages.md` — three tiers: Basic (1 server, install + Discord), Standard (multi-server, summaries, maintenance, validation), Premium (advanced setup, recovery alerts, release packaging, operations review, architecture walkthrough)
+  - `marketing/fiverr/faq.md` — 14 realistic questions: supported games, Windows-only, offline operation, Discord requirement, buyer self-editing, modded server support, admin rights, failure behavior, read-only safety, multi-server, maintenance pausing, watchdog uptime, webhook safety, support scope
+  - `marketing/fiverr/title-options.md` — 10 realistic Fiverr title ideas targeting Valheim, Project Zomboid, Minecraft, and generic Windows game server monitoring
+  - `marketing/fiverr/search-tags.md` — primary keywords, secondary keywords, long-tail keywords, platform-specific tags organized by search intent
+  - `marketing/fiverr/portfolio-summary.md` — professional one-page summary: one-liner, stack, features, supported games, safety design, target users, availability
+  - `marketing/fiverr/delivery-checklist.md` — tiered checklist: per-order basics, Standard additions, Premium additions, deliverable files list, explicit not-delivered list
 
 ## Assumptions
 
