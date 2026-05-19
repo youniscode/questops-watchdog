@@ -1,0 +1,87 @@
+{
+  "productName": "QuestOps Watchdog",
+  "configVersion": 1,
+
+  "global": {
+    "checkIntervalMinutes": 5,
+    "logDateFormat": "yyyy-MM-dd HH:mm:ss",
+    "stateDir": ".\\state",
+    "logDir": ".\\logs"
+  },
+
+  "discord": {
+    "webhookUrlEnvVar": "QUEST_OPS_DISCORD_WEBHOOK",
+    "enabled": false,
+    "defaultCooldownMinutes": 15
+  },
+
+  "servers": [
+    {
+      "name": "Example Valheim Server",
+      "enabled": false,
+      "notes": "Example Valheim server for config reference. Change paths and set enabled to true before use.",
+
+      "process": {
+        "name": "valheim_server.exe",
+        "enabled": true
+      },
+
+      "logFile": {
+        "path": "C:\\ExampleServers\\Valheim\\logs\\valheim_log.txt",
+        "maxAgeMinutes": 10,
+        "enabled": true
+      },
+
+      "disk": {
+        "path": "C:\\",
+        "minFreeGB": 10,
+        "enabled": true
+      },
+
+      "backup": {
+        "path": "D:\\ExampleBackups\\Valheim",
+        "maxAgeHours": 24,
+        "enabled": true
+      },
+
+      "discord": {
+        "webhookUrlEnvVar": "QUEST_OPS_DISCORD_WEBHOOK",
+        "cooldownMinutes": 15
+      }
+    },
+
+    {
+      "name": "Example Project Zomboid Server",
+      "enabled": false,
+      "notes": "Example Project Zomboid server. Adjust paths and enable before use.",
+
+      "process": {
+        "name": "ProjectZomboid64.exe",
+        "enabled": true
+      },
+
+      "logFile": {
+        "path": "C:\\ExampleServers\\Zomboid\\logs\\server-console.txt",
+        "maxAgeMinutes": 10,
+        "enabled": true
+      },
+
+      "disk": {
+        "path": "D:\\",
+        "minFreeGB": 20,
+        "enabled": true
+      },
+
+      "backup": {
+        "path": "D:\\ExampleBackups\\Zomboid",
+        "maxAgeHours": 48,
+        "enabled": true
+      },
+
+      "discord": {
+        "webhookUrlEnvVar": "QUEST_OPS_DISCORD_WEBHOOK",
+        "cooldownMinutes": 15
+      }
+    }
+  ]
+}
