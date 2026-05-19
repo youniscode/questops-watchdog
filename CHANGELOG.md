@@ -1,13 +1,24 @@
 # Changelog
 
-## v0.1.22 — CHANGELOG and version tracking (2026-05-19)
+## v0.1.22 — Final MVP release (2026-05-19)
 
-- Created VERSION file (v0.1.22) as single source of truth for release version.
-- Created CHANGELOG.md with release history from v0.1.10 onward.
-- Updated `package_release.ps1` to read VERSION file when `-Version` is not provided.
-- Added VERSION and CHANGELOG.md to the root files included in every release ZIP.
-- Added version badge and CHANGELOG link to README.md.
-- PROJECTMAP.md updated to reflect Task 22 completion.
+- CHANGELOG and version tracking: VERSION file, CHANGELOG.md, version-aware packaging.
+- Install guide rewrite: 13-section beginner-friendly guide with troubleshooting.
+- Release packaging: idempotent ZIP generation, exclusion rules, temp config filtering.
+- Task installer hardening: pre-install config validation, clear install summary.
+- Config validation hardening: numeric type checking, webhook URL detection, summary consistency.
+- Per-server category/tags metadata for identification and summary display.
+- Optional summary embed: grouped per-server results sent as one Discord embed.
+- Recovery alerts: one-time notification on failure-to-healthy transition.
+- Maintenance mode: flag-file-based alert suppression during planned downtime.
+- Config validation switch: -ValidateConfig on runner and scheduled task.
+- README polish: professional GitHub/Fiverr-ready presentation.
+- Demo and screenshot assets: workflow demos, architecture document.
+- Fiverr service assets: gig description, packages, FAQ, titles, tags, portfolio, delivery checklist.
+- MVP QA and release checklists: manual test procedure and release process.
+- Final MVP QA execution: 40/40 tests passed across all 7 checklist sections.
+- Packaging exclusions fix: temp test configs excluded from release ZIP.
+- Release ZIP verification: confirmed correct inclusion and exclusion of all files.
 
 ## v0.1.21 — Install guide rewrite (2026-05-19)
 

@@ -1,6 +1,6 @@
 # QuestOps Watchdog
 
-**v0.1.22** — [Changelog](CHANGELOG.md) — [Installation Guide](docs/install.md)
+**v0.1.22** — [Changelog](CHANGELOG.md) — [Installation Guide](docs/install.md) — [Release Notes](docs/release-notes-v0.1.22.md) — [QA Report](docs/final-qa-report.md)
 
 Portable PowerShell monitoring and alerting toolkit for self-hosted game servers.
 
@@ -175,7 +175,7 @@ powershell -File scripts\package_release.ps1 -Version "v0.1.22"
 
 Output: `dist\questops-watchdog-v0.1.22\` (folder) and `dist\questops-watchdog-v0.1.22.zip` (archive).
 
-Includes: configs, scripts, libraries, docs, README, CHANGELOG, VERSION. Excludes: `.git`, `logs/`, `state/`, `dist/`, `*.log`, `__*.json`.
+Includes: configs, scripts, libraries, docs, README, CHANGELOG, VERSION. Excludes: `.git`, `logs/`, `state/`, `dist/`, `*.log`, `__*.json`, `servers.local.*.json` (except `servers.local.test.json`).
 
 ---
 
@@ -193,10 +193,16 @@ No AI diagnosis, no cloud sync, no auto-healing, no mobile apps — staying focu
 
 ---
 
+## MVP Status
+
+QuestOps Watchdog v0.1.22 has completed MVP QA with 40/40 tests passed. The tool is ready for production use on self-hosted game servers. See the [Final QA Report](docs/final-qa-report.md) and [Release Notes](docs/release-notes-v0.1.22.md) for full details.
+
 ## Project Resources
 
 - [Installation Guide](docs/install.md) — step-by-step setup from scratch
 - [Changelog](CHANGELOG.md) — release history
+- [Release Notes](docs/release-notes-v0.1.22.md) — current release overview
+- [Final QA Report](docs/final-qa-report.md) — MVP QA results
 - [Project Map](PROJECTMAP.md) — architecture, phases, testing notes
 - [Config Templates](config/) — example, test, and production configs
 - [QA Checklist](docs/qa-checklist.md) — manual test procedure for releases
