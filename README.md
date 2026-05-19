@@ -6,6 +6,26 @@ A local Windows PowerShell monitoring agent for self-hosted game servers.
 
 QuestOps Watchdog checks your game servers and sends clean Discord alerts when something is wrong. Everything runs locally on your machine. No cloud, no accounts, no monthly fees.
 
+**New to QuestOps Watchdog?** See the [Installation Guide](docs/install.md) for step-by-step setup.
+
+## Quick Start
+
+```powershell
+# 1. Set your Discord webhook URL (one time)
+$env:QUESTOPS_DISCORD_WEBHOOK="YOUR_WEBHOOK_URL"
+
+# 2. Validate the test config
+powershell -File scripts\validate_config.ps1 -ConfigPath config\servers.local.test.json
+
+# 3. Run the watchdog with the test config
+powershell -File scripts\questops_watchdog.ps1 -ConfigPath config\servers.local.test.json
+
+# 4. Install automated scheduled task (every 5 minutes with validation)
+powershell -File scripts\install_task.ps1 -ConfigPath config\servers.local.test.json -IntervalMinutes 5 -ValidateConfig
+```
+
+See [docs/install.md](docs/install.md) for the full installation guide.
+
 ## Supported Checks (v0.1)
 
 All checks are available in `lib/checks.ps1`:
@@ -361,6 +381,8 @@ Generated output:
 - `dist\` — previous build artifacts
 - Temporary test configs (`__*.json`)
 
-## Setup
+## Full Installation Guide
 
-See [docs/install.md](docs/install.md) for manual setup instructions.
+See [docs/install.md](docs/install.md) for the complete step-by-step guide covering:
+extraction, Discord webhook setup, environment variables, config editing, validation,
+manual run, scheduled task, maintenance mode, logs, state, and troubleshooting.

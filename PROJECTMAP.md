@@ -78,10 +78,11 @@ questops-watchdog/
 | 10 — Validation Hardening | Production-ready config validation: numeric thresholds, type safety, path checks, Discord safety, summary consistency |
 | 11 — Task Installer Hardening | Safe scheduled task installer with pre-install config validation, clear install summary, and persistent -ValidateConfig in task action |
 | 12 — Release Packaging | Clean release ZIP packaging with versioning, exclusion rules, and idempotent builds |
+| 13 — Install Guide Rewrite | Beginner-friendly installation guide with step-by-step setup, environment variables, config editing, validation, scheduled task, maintenance, and troubleshooting |
 
 ## Current Phase
 
-**Phase 12 — Release Packaging (complete)**
+**Phase 13 — Install Guide Rewrite (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -180,6 +181,17 @@ Testing verified:
     - PowerShell 5.1 compatible, no external modules
   - `README.md`: added Release Packaging section with commands, included items, excluded items
   - `PROJECTMAP.md`: added Phase 12, updated Current Phase, updated folder structure
+- Task 21 — Install Guide Rewrite:
+  - `docs/install.md` — complete rewrite with 13-section beginner-friendly guide:
+    - Requirements, download/extract, Discord webhook creation
+    - Environment variable setup (current session + permanent)
+    - Config file selection and safe editing instructions
+    - Config validation, manual run, scheduled task install/uninstall
+    - Maintenance mode, logs and state explanation
+    - Troubleshooting: execution policy, no alerts, validation failures, task issues, leaked webhooks, wrong process/log paths
+    - All commands in code blocks, no huge walls of text, no SaaS/cloud references
+  - `README.md`: added Quick Start section at top, replaced old Setup section with link to full install guide
+  - `PROJECTMAP.md`: added Phase 13, updated Current Phase
 
 ## Assumptions
 
