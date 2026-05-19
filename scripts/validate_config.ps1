@@ -24,6 +24,11 @@ function Write-Result {
     }
 }
 
+function Test-IsNumeric {
+    param([object]$Value)
+    return $Value -is [byte] -or $Value -is [int] -or $Value -is [long] -or $Value -is [decimal] -or $Value -is [single] -or $Value -is [double]
+}
+
 Write-Host ('= ' * 30)
 Write-Host ' QuestOps Watchdog - Config Validator'
 Write-Host ('= ' * 30)
@@ -86,21 +91,64 @@ if ($config.servers.Count -eq 1) { $entryLabel = 'entry' }
 Write-Result -Label 'PASS' -Message ('servers: ' + $config.servers.Count + ' ' + $entryLabel + '.')
 
 # ---------------------------------------------------------------------------
-# 4. Discord webhook env var
+# 4. Global Discord checks
 # ---------------------------------------------------------------------------
 $globalEnvVar = $config.discord.webhookUrlEnvVar
 if (-not $globalEnvVar) {
     Write-Result -Label 'FAIL' -Message 'discord.webhookUrlEnvVar is missing or empty.'
     exit 1
 }
-if ($globalEnvVar -match '^https?://') {
+
+if ($globalEnvVar -match 'https?://') {
     Write-Result -Label 'FAIL' -Message 'discord.webhookUrlEnvVar looks like a direct URL. Use an environment variable name, not the webhook URL itself.'
     exit 1
 }
 Write-Result -Label 'PASS' -Message ('discord.webhookUrlEnvVar: <env>:' + $globalEnvVar)
 
+$discordEnabled = if ($config.discord.enabled) { $true } else { $false }
+if ($discordEnabled) {
+    $globalWebhookValue = [Environment]::GetEnvironmentVariable($globalEnvVar)
+    if (-not $globalWebhookValue) {
+        Write-Result -Label 'WARN' -Message ('discord.enabled is true but environment variable "' + $globalEnvVar + '" is not set.')
+    }
+}
+
 # ---------------------------------------------------------------------------
-# 5. Per-server validation
+# 5. Summary section checks
+# ---------------------------------------------------------------------------
+if ($config.summary) {
+    $summaryEnabled = if ($config.summary.enabled) { $true } else { $false }
+    if ($summaryEnabled -and -not $discordEnabled) {
+        Write-Result -Label 'WARN' -Message 'summary.enabled is true but global discord.enabled is false. Summary embed requires Discord.'
+    }
+
+    if ($config.summary.PSObject.Properties.Name -notcontains 'sendOnlyOnIssues') {
+        Write-Result -Label 'WARN' -Message 'summary.sendOnlyOnIssues is missing (defaults to true if omitted).'
+    }
+    elseif ($config.summary.sendOnlyOnIssues -isnot [bool]) {
+        Write-Result -Label 'FAIL' -Message 'summary.sendOnlyOnIssues must be a boolean (true/false).'
+    }
+
+    if ($config.summary.PSObject.Properties.Name -notcontains 'includeHealthyServers') {
+        Write-Result -Label 'WARN' -Message 'summary.includeHealthyServers is missing (defaults to false if omitted).'
+    }
+    elseif ($config.summary.includeHealthyServers -isnot [bool]) {
+        Write-Result -Label 'FAIL' -Message 'summary.includeHealthyServers must be a boolean (true/false).'
+    }
+
+    if ($config.summary.PSObject.Properties.Name -contains 'cooldownMinutes') {
+        $sc = $config.summary.cooldownMinutes
+        if (-not (Test-IsNumeric $sc)) {
+            Write-Result -Label 'FAIL' -Message 'summary.cooldownMinutes must be a number.'
+        }
+        elseif ($sc -lt 0) {
+            Write-Result -Label 'FAIL' -Message 'summary.cooldownMinutes must be zero or positive (got ' + $sc + ').'
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# 6. Per-server validation
 # ---------------------------------------------------------------------------
 for ($i = 0; $i -lt $config.servers.Count; $i++) {
     $sv = $config.servers[$i]
@@ -119,35 +167,61 @@ for ($i = 0; $i -lt $config.servers.Count; $i++) {
     $statusLabel = if ($sv.enabled) { 'enabled' } else { 'disabled' }
     Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" ' + $statusLabel + '.')
 
-    # warn if enabled but paths contain REPLACE_ME
-    if ($sv.enabled) {
-        $raw = Get-Content -LiteralPath $ConfigPath -Raw
-        if ($raw -match 'REPLACE_ME') {
-            Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" is enabled but still contains placeholder paths (REPLACE_ME).')
-        }
-    }
-
-    # category validation
+    # -----------------------------------------------------------------------
+    # Category validation
+    # -----------------------------------------------------------------------
     if ($sv.PSObject.Properties.Name -contains 'category') {
         if ($sv.category -isnot [string]) {
             Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" "category" must be a string.')
+        }
+        elseif ($sv.category -eq '') {
+            Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" "category" is empty string.')
         }
     }
     elseif ($sv.enabled) {
         Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" is enabled but has no "category" field.')
     }
 
-    # tags validation
+    # -----------------------------------------------------------------------
+    # Tags validation
+    # -----------------------------------------------------------------------
     if ($sv.PSObject.Properties.Name -contains 'tags') {
         if ($sv.tags -isnot [array]) {
             Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" "tags" must be an array of strings.')
+        }
+        else {
+            if ($sv.tags.Count -eq 0) {
+                Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" "tags" array is empty.')
+            }
+            else {
+                $nonStringTags = $sv.tags | Where-Object { $_ -isnot [string] }
+                foreach ($badTag in $nonStringTags) {
+                    $tagDisplay = if ($badTag -eq $null) { 'null' } else { $badTag.ToString() }
+                    Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" tag "' + $tagDisplay + '" is not a string.')
+                }
+            }
         }
     }
     elseif ($sv.enabled) {
         Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" is enabled but has no "tags" field.')
     }
 
-    # process check
+    # -----------------------------------------------------------------------
+    # REPLACE_ME placeholder check (per-server fields only)
+    # -----------------------------------------------------------------------
+    if ($sv.enabled) {
+        $replacePaths = @()
+        if ($sv.logFile -and $sv.logFile.path -and ($sv.logFile.path -match 'REPLACE_ME')) { $replacePaths += 'logFile.path' }
+        if ($sv.backup -and $sv.backup.path -and ($sv.backup.path -match 'REPLACE_ME')) { $replacePaths += 'backup.path' }
+        if ($sv.disk -and $sv.disk.path -and ($sv.disk.path -match 'REPLACE_ME')) { $replacePaths += 'disk.path' }
+        if ($replacePaths.Count -gt 0) {
+            Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" is enabled but still contains placeholder paths in: ' + ($replacePaths -join ', '))
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    # Process check
+    # -----------------------------------------------------------------------
     if ($sv.process -and $sv.process.enabled) {
         if (-not $sv.process.name) {
             Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" process check enabled but "process.name" is missing.')
@@ -157,40 +231,128 @@ for ($i = 0; $i -lt $config.servers.Count; $i++) {
         }
     }
 
-    # logFile check
+    # -----------------------------------------------------------------------
+    # Log file check
+    # -----------------------------------------------------------------------
     if ($sv.logFile -and $sv.logFile.enabled) {
         $logOk = $true
-        if (-not $sv.logFile.path)    { Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" logFile.path missing.');  $logOk = $false }
-        if (-not $sv.logFile.maxAgeMinutes) { Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" logFile.maxAgeMinutes missing.'); $logOk = $false }
-        if ($logOk) { Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" log: ' + $sv.logFile.path) }
+
+        if ($sv.enabled -and (-not $sv.logFile.path)) {
+            Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" logFile check enabled but "logFile.path" is missing.')
+            $logOk = $false
+        }
+
+        $maxAge = $sv.logFile.maxAgeMinutes
+        if ($maxAge -eq $null) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" logFile.maxAgeMinutes is missing.')
+            $logOk = $false
+        }
+        elseif (-not (Test-IsNumeric $maxAge)) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" logFile.maxAgeMinutes must be a number.')
+            $logOk = $false
+        }
+        elseif ($maxAge -le 0) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" logFile.maxAgeMinutes must be a positive number (got ' + $maxAge + ').')
+            $logOk = $false
+        }
+
+        if ($logOk) {
+            Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" log: ' + $sv.logFile.path)
+        }
     }
 
-    # disk check
+    # -----------------------------------------------------------------------
+    # Disk check
+    # -----------------------------------------------------------------------
     if ($sv.disk -and $sv.disk.enabled) {
         $diskOk = $true
-        if (-not $sv.disk.path)         { Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" disk.path missing.');          $diskOk = $false }
-        if (-not $sv.disk.minFreeGB)    { Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" disk.minFreeGB missing.');     $diskOk = $false }
-        if ($diskOk) { Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" disk: ' + $sv.disk.path + ' (min ' + $sv.disk.minFreeGB + ' GB)') }
+
+        if ($sv.enabled -and (-not $sv.disk.path)) {
+            Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" disk check enabled but "disk.path" is missing.')
+            $diskOk = $false
+        }
+
+        $minFree = $sv.disk.minFreeGB
+        if ($minFree -eq $null) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" disk.minFreeGB is missing.')
+            $diskOk = $false
+        }
+        elseif (-not (Test-IsNumeric $minFree)) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" disk.minFreeGB must be a number.')
+            $diskOk = $false
+        }
+        elseif ($minFree -le 0) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" disk.minFreeGB must be a positive number (got ' + $minFree + ').')
+            $diskOk = $false
+        }
+
+        if ($diskOk) {
+            Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" disk: ' + $sv.disk.path + ' (min ' + $minFree + ' GB)')
+        }
     }
 
-    # backup check
+    # -----------------------------------------------------------------------
+    # Backup check
+    # -----------------------------------------------------------------------
     if ($sv.backup -and $sv.backup.enabled) {
         $backupOk = $true
-        if (-not $sv.backup.path)        { Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" backup.path missing.');        $backupOk = $false }
-        if (-not $sv.backup.maxAgeHours) { Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" backup.maxAgeHours missing.'); $backupOk = $false }
-        if ($backupOk) { Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" backup: ' + $sv.backup.path + ' (max ' + $sv.backup.maxAgeHours + ' hr)') }
+
+        if ($sv.enabled -and (-not $sv.backup.path)) {
+            Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" backup check enabled but "backup.path" is missing.')
+            $backupOk = $false
+        }
+
+        $maxHours = $sv.backup.maxAgeHours
+        if ($maxHours -eq $null) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" backup.maxAgeHours is missing.')
+            $backupOk = $false
+        }
+        elseif (-not (Test-IsNumeric $maxHours)) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" backup.maxAgeHours must be a number.')
+            $backupOk = $false
+        }
+        elseif ($maxHours -le 0) {
+            Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" backup.maxAgeHours must be a positive number (got ' + $maxHours + ').')
+            $backupOk = $false
+        }
+
+        if ($backupOk) {
+            Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" backup: ' + $sv.backup.path + ' (max ' + $maxHours + ' hr)')
+        }
     }
 
-    # discord per-server
+    # -----------------------------------------------------------------------
+    # Discord per-server
+    # -----------------------------------------------------------------------
     if ($sv.discord) {
-        if ($sv.discord.webhookUrlEnvVar -match '^https?://') {
+        $svEnvVar = $sv.discord.webhookUrlEnvVar
+        if ($svEnvVar -match 'https?://') {
             Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" discord.webhookUrlEnvVar looks like a direct URL. Use an env var name.')
         }
+        elseif (-not $svEnvVar) {
+            Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" discord.webhookUrlEnvVar is missing (will fall back to global Discord config).')
+        }
+        else {
+            Write-Result -Label 'PASS' -Message ($tag + ' "' + $sv.name + '" discord: <env>:' + $svEnvVar)
+        }
+
+        if ($sv.discord.PSObject.Properties.Name -contains 'cooldownMinutes') {
+            $cd = $sv.discord.cooldownMinutes
+            if (-not (Test-IsNumeric $cd)) {
+                Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" discord.cooldownMinutes must be a number.')
+            }
+            elseif ($cd -lt 0) {
+                Write-Result -Label 'FAIL' -Message ($tag + ' "' + $sv.name + '" discord.cooldownMinutes must be zero or positive (got ' + $cd + ').')
+            }
+        }
+    }
+    else {
+        Write-Result -Label 'WARN' -Message ($tag + ' "' + $sv.name + '" has no "discord" section (will fall back to global Discord config).')
     }
 }
 
 # ---------------------------------------------------------------------------
-# Summary
+# 7. Summary
 # ---------------------------------------------------------------------------
 Write-Host ('= ' * 30)
 Write-Host ('Results: ' + $pass + ' passed, ' + $warn + ' warnings, ' + $fail + ' failed.') -ForegroundColor Cyan

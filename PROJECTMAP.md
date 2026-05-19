@@ -74,10 +74,11 @@ questops-watchdog/
 | 7 — Recovery Alerts | Send one-time success notifications when a failing check recovers |
 | 8 — Summary Embed | Optional grouped Discord summary at end of each run |
 | 9 — Category/Tags Metadata | Per-server category and tags for identification, validation, and summary display |
+| 10 — Validation Hardening | Production-ready config validation: numeric thresholds, type safety, path checks, Discord safety, summary consistency |
 
 ## Current Phase
 
-**Phase 9 — Category/Tags Metadata (complete)**
+**Phase 10 — Validation Hardening (complete)**
 
 Completed:
 - Repository structure created (config/, scripts/, lib/, state/, logs/, docs/)
@@ -108,8 +109,7 @@ Completed:
   - Task 16: Added optional grouped run summary embed — configurable via top-level `summary` section; collects per-server results (healthy/issue/skipped/maintenance); sends one Discord embed at end of run with rollup counts and per-server fields; respects sendOnlyOnIssues, includeHealthyServers, and cooldownMinutes settings; cooldown tracked in `__summary__/state.json`
 - scripts/install_task.ps1 — Scheduled task installer (params: ConfigPath, TaskName, IntervalMinutes; validates paths; interactive user only; no passwords)
 - scripts/uninstall_task.ps1 — Scheduled task uninstaller (safe; warns if task doesn't exist)
-- scripts/validate_config.ps1 — Config file validator (checks structure, fields, webhook env var safety; exits 0/1)
-  - Encoding fix: replaced em dash with ASCII hyphen in title output
+- scripts/validate_config.ps1 — Config file validator (checks structure, fields, webhook env var safety, numeric thresholds, type safety, path validation; exits 0/1)
 
 Testing verified:
 - All 4 checks run and report correctly with test config (process=running, log/backup=fresh, disk=OK)
@@ -138,6 +138,24 @@ Testing verified:
   - `scripts/validate_config.ps1`: warns when enabled server lacks category/tags; fails on type mismatch
   - `scripts/questops_watchdog.ps1`: stores Category/Tags in $serverResults; includes in summary embed field values when present
   - `README.md`: documented category/tags fields and validation behavior
+- Task 18 — Validation Hardening:
+  - `scripts/validate_config.ps1` — full rewrite with hardened validation:
+    - Numeric type checking via Test-IsNumeric (catches string, bool, object instead of number)
+    - logFile.maxAgeMinutes must be positive number (not just truthy)
+    - disk.minFreeGB must be positive number
+    - backup.maxAgeHours must be positive number
+    - discord.cooldownMinutes must be >= 0 if present
+    - summary.cooldownMinutes must be >= 0 if present
+    - Empty category string warns
+    - Empty tags array warns
+    - Each tag element validated as string (fails on non-strings)
+    - Discord global warns if enabled but env var not set
+    - Per-server discord warns if missing webhookUrlEnvVar or no discord section
+    - Per-server discord.webhookUrlEnvVar fails if it contains http:// or https:// anywhere
+    - Summary warns if enabled but Discord disabled
+    - Summary warns if sendOnlyOnIssues or includeHealthyServers are missing
+    - Placeholder path check now per-server (checks each field individually instead of raw file scan)
+    - Missing path on enabled check warns instead of fails
 
 ## Assumptions
 

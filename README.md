@@ -300,7 +300,22 @@ powershell -File scripts\validate_config.ps1 -ConfigPath config\servers.local.te
 powershell -File scripts\validate_config.ps1 -ConfigPath config\servers.production.template.json
 ```
 
-The validator checks: file exists, valid JSON, required fields present, each server has name/enabled, each enabled check has needed fields, and Discord webhook uses an environment variable name (not a direct URL). Exits 0 on pass, 1 on failure. Never sends alerts or modifies files.
+The validator performs the following checks and exits 0 on pass, 1 on failure. Never sends alerts or modifies files.
+
+| Category | Checks |
+|----------|--------|
+| File/JSON | File exists, valid JSON |
+| Required fields | productName, configVersion, global, discord, servers (non-empty) |
+| Discord (global) | webhookUrlEnvVar is an env var name (not a URL), warns if enabled but env var not set |
+| Summary | Warns if enabled but Discord disabled, warns if sendOnlyOnIssues or includeHealthyServers are missing, validates cooldownMinutes >= 0 |
+| Names/Enabled | Each server has name and enabled flag |
+| Metadata | category must be string (warns if empty), tags must be array of strings (warns if empty, fails on non-string elements) |
+| Process | Fails if enabled but process.name is missing |
+| Log file | Warns if enabled but path missing, fails if maxAgeMinutes is not a positive number |
+| Disk | Warns if enabled but path missing, fails if minFreeGB is not a positive number |
+| Backup | Warns if enabled but path missing, fails if maxAgeHours is not a positive number |
+| Discord (per-server) | Fails if webhookUrlEnvVar contains a URL, warns if missing env var (falls back to global), validates cooldownMinutes >= 0, warns if discord section absent (falls back to global) |
+| Placeholder paths | Warns if enabled server still uses REPLACE_ME in logFile, backup, or disk paths |
 
 ## Setup
 
