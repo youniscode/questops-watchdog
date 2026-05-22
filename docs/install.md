@@ -96,7 +96,33 @@ You should see a blue embed message appear in your Discord channel. If it fails,
 
 ---
 
-## 5. Choose a Config File
+## 5. Choose Your Install Method
+
+### Option A: Windows GUI Setup Wizard (Recommended)
+
+The most user-friendly way to set up QuestOps Watchdog. It provides a visual interface to configure your server, browse for folders, safely store your Discord webhook, and install the scheduled task with one click.
+
+```powershell
+powershell -File scripts\setup_client_gui.ps1
+```
+
+### Option B: Interactive CLI Wizard
+
+A guided terminal-based setup. Best if you are working over SSH or prefer a text interface.
+
+```powershell
+powershell -File scripts\setup_client.ps1
+```
+
+Both wizards will create `config\servers.client.generated.json` for you. See the [Client Setup Wizard Guide](client-setup-wizard.md) for more details.
+
+### Option C: Manual Configuration
+
+If you prefer to set things up manually, follow the steps below.
+
+---
+
+## 6. Choose a Config File
 
 QuestOps Watchdog ships with three config files:
 

@@ -1,0 +1,58 @@
+{
+  "productName": "QuestOps Watchdog",
+  "configVersion": 1,
+  "global": {
+    "checkIntervalMinutes": 5,
+    "logDateFormat": "yyyy-MM-dd HH:mm:ss",
+    "stateDir": ".\\state",
+    "logDir": ".\\logs"
+  },
+  "discord": {
+    "webhookUrlEnvVar": "QUESTOPS_DISCORD_WEBHOOK",
+    "enabled": true,
+    "defaultCooldownMinutes": 30
+  },
+  "summary": {
+    "enabled": true,
+    "sendOnlyOnIssues": true,
+    "includeHealthyServers": false,
+    "cooldownMinutes": 30
+  },
+  "servers": [
+    {
+      "name": "Client PZ Server",
+      "category": "production",
+      "tags": ["project-zomboid", "windows", "dedicated"],
+      "enabled": true,
+      "notes": "Client Project Zomboid monitoring setup.",
+      "process": {
+        "name": "PZ_main",
+        "enabled": true
+      },
+      "logFile": {
+        "path": "C:\\Users\\youne\\Zomboid\\Logs",
+        "maxAgeMinutes": 30,
+        "enabled": true
+      },
+      "disk": {
+        "path": "C:\\",
+        "minFreeGB": 20,
+        "enabled": true
+      },
+      "backup": {
+        "path": "C:\\Users\\youne\\Zomboid",
+        "maxAgeHours": 48,
+        "enabled": true
+      },
+      "maintenance": {
+        "enabled": false,
+        "flagPath": ".\\state\\maintenance\\client-pz-server.flag",
+        "suppressAlerts": true
+      },
+      "discord": {
+        "webhookUrlEnvVar": "QUESTOPS_DISCORD_WEBHOOK",
+        "cooldownMinutes": 30
+      }
+    }
+  ]
+}

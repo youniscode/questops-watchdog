@@ -46,6 +46,26 @@ The [production template](config/servers.production.template.json) ships with al
 
 ## Quick Start
 
+### 1. Windows GUI Setup Wizard (Best for most users)
+
+The easiest way to get started. Just run the GUI, fill in your server details, and click "Install Task".
+
+```powershell
+powershell -File scripts\setup_client_gui.ps1
+```
+
+### 2. Interactive CLI Wizard
+
+For those who prefer a terminal-based guided setup.
+
+```powershell
+powershell -File scripts\setup_client.ps1
+```
+
+See the [Client Setup Wizard Guide](docs/client-setup-wizard.md) for details.
+
+### 2. Manual Setup
+
 ```powershell
 # 1. Extract the release ZIP to a permanent folder (e.g. C:\QuestOpsWatchdog)
 # 2. Set your Discord webhook URL (one time)

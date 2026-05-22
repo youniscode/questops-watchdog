@@ -1,5 +1,26 @@
 # Changelog
 
+## [v0.1.24] - 2026-05-22
+
+### Added
+- Windows GUI Setup Wizard (`scripts/setup_client_gui.ps1`)
+- WinForms interface with folder browsing and real-time output feedback
+- Visual configuration generation, validation, and task installation
+
+### Changed
+- Prioritized GUI setup in documentation for improved user experience
+
+## [v0.1.23] - 2026-05-22
+
+### Added
+- Interactive Client Setup Wizard (`scripts/setup_client.ps1`) for non-technical users
+- Automated configuration generation (`config/servers.client.generated.json`)
+- Dedicated setup wizard documentation (`docs/client-setup-wizard.md`)
+- Quick Start wizard option in README and Installation Guide
+
+### Changed
+- Improved installation flow for first-time users
+
 ## v0.1.22 — Final MVP release (2026-05-19)
 
 - CHANGELOG and version tracking: VERSION file, CHANGELOG.md, version-aware packaging.

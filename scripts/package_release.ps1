@@ -104,6 +104,7 @@ foreach ($f in $files) {
 Get-ChildItem -Path $releaseDir -Recurse -Include "*.log" | Remove-Item -Force -ErrorAction SilentlyContinue
 Get-ChildItem -Path $releaseDir -Recurse -Filter "__*.json" | Remove-Item -Force -ErrorAction SilentlyContinue
 Get-ChildItem -Path $releaseDir -Recurse -Filter "servers.local.*.json" | Where-Object { $_.Name -ne 'servers.local.test.json' } | Remove-Item -Force -ErrorAction SilentlyContinue
+Get-ChildItem -Path $releaseDir -Recurse -Filter "servers.client.generated.json" | Remove-Item -Force -ErrorAction SilentlyContinue
 
 # ---------------------------------------------------------------------------
 # Count files in release
