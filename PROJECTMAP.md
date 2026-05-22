@@ -87,23 +87,29 @@ questops-watchdog/
 | 19 — Final MVP QA Report and Release Notes | QA execution report with 40-test matrix, release notes document, MVP completion declaration |
 | 20 — Client Setup Wizard | Interactive PowerShell script for non-technical setup, Discord webhook security, automated config generation and task installation |
 | 21 — Windows GUI Setup Wizard | Modern WinForms-based visual installer with folder browsing, secure secret handling, and one-click task installation |
+| 22 — GUI Enhancements | Path auto-detection for Project Zomboid and common server paths, one-click client package export with automated ZIP generation and delivery instructions |
+| 23 — GUI Testing Integration | Built-in Discord test alert button in setup wizard, secure secret handling, real-time success/failure feedback |
+| 24 — Modern UI Polish | Transformation of setup wizard into a professional dark-themed application with custom styling and improved aesthetics |
+| 25 — EXE Build Support | Optional compilation workflow to turn the GUI setup wizard into a standalone Windows executable for easier distribution |
+| 26 — Game Config Templates | Embedded configuration profiles for popular games (Valheim, Zomboid, etc.) with automatic field population and tag metadata |
+| 27 — Live Status Panel | Integrated diagnostic panel in GUI for real-time validation of configuration, webhooks, scheduled tasks, and latest log summaries |
 
 ## Current Phase
 
-**Phase 21 — Windows GUI Setup Wizard (complete)**
+**Phase 27 — Live Status Panel (complete)**
 
-Version: **v0.1.24**
+Version: **v0.1.30**
 
-MVP maturity: **Release (with GUI)** — Full suite of installation tools complete. Includes interactive CLI wizard and modern Windows GUI setup wizard. Secure webhook storage, automated configuration generation, and streamlined installation for all user levels.
+MVP maturity: **Release (with Pro Dark GUI + Diagnostics)** — Professional-grade installation, diagnostic, and distribution tools complete. Includes modern dark UI, live status monitoring, game-specific templates, automated path detection, secure webhook storage, integrated validation, task installation, one-click deployment package export, and instant Discord alert testing.
 
 Completed:
 - (All previous tasks...)
-- Task 30: Windows GUI Setup Wizard
-  - `scripts/setup_client_gui.ps1` — WinForms-based visual setup tool
-  - Visual folder browsing for log and backup paths
-  - Real-time output feedback box
-  - Integrated generation, validation, and installation logic
-  - Updated documentation to prioritize GUI setup
+- Task 35: Live Status Panel
+  - `scripts/setup_client_gui.ps1` — New "Live Watchdog Status" side panel
+  - Real-time checking of config files, validation, webhooks, and tasks
+  - Automated log parsing to show the latest run summary results
+  - Color-coded status indicators (Green/Yellow/Red)
+  - Version bump to v0.1.30
 
 ## Assumptions
 

@@ -1,14 +1,26 @@
 # Changelog
 
-## [v0.1.24] - 2026-05-22
+## [v0.1.30] - 2026-05-22
 
 ### Added
-- Windows GUI Setup Wizard (`scripts/setup_client_gui.ps1`)
-- WinForms interface with folder browsing and real-time output feedback
-- Visual configuration generation, validation, and task installation
+- Live Watchdog Status Panel in GUI Wizard for real-time system diagnostics
+- Color-coded status indicators for configuration, webhooks, and tasks
+- Automated log summary parsing to show the latest check results in the GUI
 
 ### Changed
-- Prioritized GUI setup in documentation for improved user experience
+- Increased GUI window size to accommodate the new diagnostic panel
+
+## [v0.1.29] - 2026-05-22
+
+## [v0.1.28] - 2026-05-22
+
+## [v0.1.27] - 2026-05-22
+
+## [v0.1.26] - 2026-05-22
+
+## [v0.1.25] - 2026-05-22
+
+## [v0.1.24] - 2026-05-22
 
 ## [v0.1.23] - 2026-05-22
 

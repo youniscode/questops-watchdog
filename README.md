@@ -48,13 +48,23 @@ The [production template](config/servers.production.template.json) ships with al
 
 ### 1. Windows GUI Setup Wizard (Best for most users)
 
-The easiest way to get started. Just run the GUI, fill in your server details, and click "Install Task".
+The easiest way to get started. A modern dark-themed application that guides you through every step. Just run the GUI, fill in your server details, and click "Install Task".
 
-```powershell
-powershell -File scripts\setup_client_gui.ps1
-```
+**Features:**
+- **Modern Dark UI**: Clean, professional interface designed for Windows 10/11.
+- **Live Status Panel**: Real-time overview of your configuration, webhook, and scheduled task status.
+- **Game Templates**: Selecting a game (Valheim, Zomboid, etc.) automatically loads recommended paths, process names, and alert thresholds.
+- **Visual Browsing**: Pick your log and backup folders with a standard Windows folder picker.
+- **Send Test Alert**: Verify your Discord webhook configuration instantly from the wizard.
+- **Client Package Export**: Create a ready-to-deliver ZIP for your clients in one click.
 
-### 2. Interactive CLI Wizard
+### 2. Standalone EXE (Optional)
+
+If you prefer a single executable file instead of a PowerShell script, you can build your own standalone version.
+
+See the [EXE Build Guide](docs/exe-build.md) for instructions.
+
+### 3. Interactive CLI Wizard
 
 For those who prefer a terminal-based guided setup.
 

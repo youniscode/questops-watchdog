@@ -100,7 +100,15 @@ You should see a blue embed message appear in your Discord channel. If it fails,
 
 ### Option A: Windows GUI Setup Wizard (Recommended)
 
-The most user-friendly way to set up QuestOps Watchdog. It provides a visual interface to configure your server, browse for folders, safely store your Discord webhook, and install the scheduled task with one click.
+The most user-friendly way to set up QuestOps Watchdog. It provides a modern visual interface to configure your server, browse for folders, safely store your Discord webhook, and install the scheduled task with one click.
+
+**Key Features:**
+- **Modern Dark Interface**: Professional UI that matches your gaming setup.
+- **Live Status Panel**: Instantly see if your setup is ready. Click **Refresh Status** to check your configuration, Discord webhook, and automated task.
+- **Game Templates**: Pick your game from the dropdown to automatically fill in the best process names, log paths, and alert settings for that specific game.
+- **Auto-Detect**: Automatically scans your computer for common game server paths (like Project Zomboid).
+- **Test Alert**: Instantly verify your Discord webhook is working before finishing setup.
+- **One-Click Export**: Creates a ready-to-deploy ZIP package for your clients or other servers.
 
 ```powershell
 powershell -File scripts\setup_client_gui.ps1
